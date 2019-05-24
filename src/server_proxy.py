@@ -1,6 +1,8 @@
 # import socket programming library
 import socket
 
+import sys, os
+
 # import thread module
 from _thread import *
 import threading
@@ -9,17 +11,38 @@ import threading
 # Imports from pyasn1
 from pyasn1.type import tag, namedtype, namedval, univ, constraint
 
-
+from ldap.protocol import *
+from pyasn1.codec.ber import encoder, decoder
 
 
 print_lock = threading.Lock()
 
 # https://tools.ietf.org/html/rfc4511
 
+def decode_data(data):
+    try:
+        x, _ = decoder.decode(data, LDAPMessage())
+    except:
+        x = None
+
+    return x
+
+
+def print_decoded_data(data):
+    x = decode_data(data)
+    if x is not None:
+        print(x.prettyPrint())
+    else:
+        print('NONE (Error)')
 
 
 # thread fuction
 def threaded(c):
+    proxy_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    proxy_server_address = ('ldap.astro.uni-bonn.de', 389)
+
+    proxy_sock.connect(proxy_server_address)
+#
     while True:
 
         # data received from client
@@ -36,22 +59,35 @@ def threaded(c):
 
         # send back reversed string to client
         #c.send(data)
-        print(data)
+        print('IN:    ', data)
+        print_decoded_data(data)
+        sys.stdout.flush()
+        proxy_sock.sendall(data)
 
+        data = b''
+        while True:
+            sdata = proxy_sock.recv(1024)
+            print('sdata: ', sdata)
+            if not sdata:
+                break
+            data += sdata
+            c.send(sdata)
+            if len(sdata) < 1024:
+                break
 
-        s = b'0\x1c\x02\x01\x01a\x170\x15\n\x01\x00\x04\x05Hallo\x04\x07Success\xa3\x00'
-        #s = b'0\x1c\x02\x01\x02a\x170\x15\n\x01\x00\x04\x05Hallo\x04\x07Success\xa3\x00'
+        print('OUT:   ', data)
+        print_decoded_data(data)
+        sys.stdout.flush()
+        #print('OUT: ', data)
 
-
-        #s = b'0\x1c\x02\x01\x01a\x170\x15\n\x01\x01\x04\x05Hallo\x04\x07Success\xa3\x00'
-        s = b'0\x1c\x02\x01\x02a\x170\x15\n\x01\x01\x04\x05Hallo\x04\x07Success\xa3\x00'
-        s = b'0\x1c\x02\x01\x02a\x170\x15\n\x011\x04\x05Hallo\x04\x07Success\xa3\x00'
-        c.send(s)
+        #c.sendall(data)
         #c.send(s)
 
     # connection closed
-    print('Closing the connection!')
+    print('Closing the connections!')
+    proxy_sock.close()
     c.close()
+
 
 
 def Main():
@@ -81,7 +117,8 @@ def Main():
             print('Connected to :', addr[0], ':', addr[1])
 
             # Start a new thread and return its identifier
-            start_new_thread(threaded, (c,))
+            #start_new_thread(threaded, (c,))
+            threaded(c)
     except:
         pass
     s.close()
