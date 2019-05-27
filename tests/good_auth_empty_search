@@ -1,0 +1,28 @@
+IN:     b'0C\x02\x01\x01`>\x02\x01\x03\x040uid=ocordes,ou=People,dc=astro,dc=uni-bonn,dc=de\x80\x07XXXXXXX'
+LDAPMessage:
+ messageID=1
+ protocolOp=Choice:
+  bindRequest=BindRequest:
+   version=3
+   name=uid=ocordes,ou=People,dc=astro,dc=uni-bonn,dc=de
+   authentication=AuthenticationChoice:
+    simple=XXXXXXX
+
+
+
+
+sdata:  b'0\x0c\x02\x01\x01a\x07\n\x01\x00\x04\x00\x04\x00'
+OUT:    b'0\x0c\x02\x01\x01a\x07\n\x01\x00\x04\x00\x04\x00'
+NONE (Error)
+IN:     b'0%\x02\x01\x02c \x04\x00\n\x01\x02\n\x01\x00\x02\x01\x00\x02\x01\x00\x01\x01\x00\x87\x0bobjectclass0\x00'
+NONE (Error)
+sdata:  b'0\x0c\x02\x01\x02e\x07\n\x01 \x04\x00\x04\x00'
+OUT:    b'0\x0c\x02\x01\x02e\x07\n\x01 \x04\x00\x04\x00'
+NONE (Error)
+IN:     b'0\x05\x02\x01\x03B\x00'
+NONE (Error)
+sdata:  b''
+OUT:    b''
+NONE (Error)
+Bye
+Closing the connections!

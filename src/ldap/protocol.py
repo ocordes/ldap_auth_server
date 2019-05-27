@@ -25,6 +25,10 @@ class LDAPString(univ.OctetString):
     pass
 
 
+class RelativeLDAPDN(LDAPString):
+    pass
+
+
 class LDAPDN(LDAPString):
     pass
 
@@ -60,8 +64,35 @@ class AttributeValueAssertion(univ.Sequence):
     )
 
 
+class AttributeValue(univ.OctetString):
+    pass
+
+
+class Attribute(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type', AttributeDescription()),
+        namedtype.NamedType('vals', univ.SetOf(
+            componentType=namedtype.NamedType('value', AttributeValue())))
+)
+
+class AttributeList(univ.SequenceOf):
+    componentType = namedtype.NamedType('attribute', Attribute())
+
+
 class URI(LDAPString):
     pass
+
+
+class PartialAttribute(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type', AttributeDescription()),
+        namedtype.NamedType('vals', univ.SetOf(
+            componentType=namedtype.NamedType('value', AttributeValue())))
+    )
+
+
+class PartialAttributeList(univ.SequenceOf):
+    componentType = namedtype.NamedType('partialAttribute', PartialAttribute())
 
 
 # special types
@@ -172,56 +203,65 @@ class LDAPResult(univ.Sequence):
 
 
 class BindResponse(univ.Sequence):
-    tagSet = univ.Sequence.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 1))
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 1))
+
     componentType = namedtype.NamedTypes(
         #namedtype.NamedType('resultCode', ResultCode()),
-        namedtype.NamedType('resultCode', univ.Integer()),
-        # univ.Enumerated(
-        #     namedValues=namedval.NamedValues(
-        #         ('success', 0),
-        #         ('operationsError', 1),
-        #         ('protocolError', 2),
-        #         ('timeLimitExceeded', 3),
-        #         ('sizeLimitExceeded', 4),
-        #         ('compareFalse', 5),
-        #         ('compareTrue', 6),
-        #         ('authMethodNotSupported', 7),
-        #         ('strongerAuthRequired', 8),
-        #         ('referral', 10),
-        #         ('adminLimitExceeded', 11),
-        #         ('unavailableCriticalExtension', 12),
-        #         ('confidentialityRequired', 13),
-        #         ('saslBindInProgress', 14),
-        #         ('noSuchAttribute', 16),
-        #         ('undefinedAttributeType', 17),
-        #         ('inappropriateMatching', 18),
-        #         ('constraintViolation', 19),
-        #         ('attributeOrValueExists', 20),
-        #         ('invalidAttributeSyntax', 21),
-        #         ('noSuchObject', 32),
-        #         ('aliasProblem', 33),
-        #         ('invalidDNSyntax', 34),
-        #         ('aliasDereferencingProblem', 36),
-        #         ('inappropriateAuthentication', 48),
-        #         ('invalidCredentials', 49),
-        #         ('insufficientAccessRights', 50),
-        #         ('busy', 51),
-        #         ('unavailable', 52),
-        #         ('unwillingToPerform', 53),
-        #         ('loopDetect', 54),
-        #         ('namingViolation', 64),
-        #         ('objectClassViolation', 65),
-        #         ('notAllowedOnNonLeaf', 66),
-        #         ('notAllowedOnRDN', 67),
-        #         ('entryAlreadyExists', 68),
-        #         ('objectClassModsProhibited', 69),
-        #         ('affectsMultipleDSAs', 71),
-        #         ('other', 80)))),
+        namedtype.NamedType('resultCode',
+         univ.Enumerated(
+             namedValues=namedval.NamedValues(
+                 ('success', 0),
+                 ('operationsError', 1),
+                 ('protocolError', 2),
+                 ('timeLimitExceeded', 3),
+                 ('sizeLimitExceeded', 4),
+                 ('compareFalse', 5),
+                 ('compareTrue', 6),
+                 ('authMethodNotSupported', 7),
+                 ('strongerAuthRequired', 8),
+                 ('referral', 10),
+                 ('adminLimitExceeded', 11),
+                 ('unavailableCriticalExtension', 12),
+                 ('confidentialityRequired', 13),
+                 ('saslBindInProgress', 14),
+                 ('noSuchAttribute', 16),
+                 ('undefinedAttributeType', 17),
+                 ('inappropriateMatching', 18),
+                 ('constraintViolation', 19),
+                 ('attributeOrValueExists', 20),
+                 ('invalidAttributeSyntax', 21),
+                 ('noSuchObject', 32),
+                 ('aliasProblem', 33),
+                 ('invalidDNSyntax', 34),
+                 ('aliasDereferencingProblem', 36),
+                 ('inappropriateAuthentication', 48),
+                 ('invalidCredentials', 49),
+                 ('insufficientAccessRights', 50),
+                 ('busy', 51),
+                 ('unavailable', 52),
+                 ('unwillingToPerform', 53),
+                 ('loopDetect', 54),
+                 ('namingViolation', 64),
+                 ('objectClassViolation', 65),
+                 ('notAllowedOnNonLeaf', 66),
+                 ('notAllowedOnRDN', 67),
+                 ('entryAlreadyExists', 68),
+                 ('objectClassModsProhibited', 69),
+                 ('affectsMultipleDSAs', 71),
+                 ('other', 80)))),
         namedtype.NamedType('matchedDN', LDAPDN()),
         namedtype.NamedType('diagnosticMessage', LDAPString()),
-        namedtype.OptionalNamedType('referral', Referral().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
-        namedtype.OptionalNamedType('serverSaslCreds', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7)))
+        namedtype.OptionalNamedType('referral', Referral().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+        namedtype.OptionalNamedType('serverSaslCreds', univ.OctetString().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7)))
     )
+
+
+#------------------------------------------------------------------------------
+# UnbindRequest
+
+
+class UnbindRequest(univ.Null):
+    tagSet = univ.Null.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatSimple, 2))
 
 
 #------------------------------------------------------------------------------
@@ -322,38 +362,155 @@ class SearchRequest(univ.Sequence):
              dnAttributes    [4] BOOLEAN DEFAULT FALSE }
 
     """
-    tagSet = univ.Sequence.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 3))
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 3))
     componentType = namedtype.NamedTypes(
-            namedtype.NamedType('baseObject', univ.OctetString()),
+            namedtype.NamedType('baseObject', LDAPDN()),
+            namedtype.NamedType('scope', univ.Enumerated(namedValues=namedval.NamedValues(('baseObject', 0), ('singleLevel', 1), ('wholeSubtree', 2)))),
+            namedtype.NamedType('derefAliases', univ.Enumerated(namedValues=namedval.NamedValues(('neverDerefAliases', 0), ('derefInSearching', 1), ('derefFindingBaseObj', 2), ('derefAlways', 3)))),
+            namedtype.NamedType('sizeLimit', univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, maxInt))),
+            namedtype.NamedType('timeLimit', univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, maxInt))),
+            namedtype.NamedType('typesOnly', univ.Boolean()),
+            namedtype.NamedType('filter', Filter()),
+            namedtype.NamedType('attributes', AttributeSelection())
     )
+
+#------------------------------------------------------------------------------
+# SearchResultDone
+
+class SearchResultEntry(univ.Sequence):
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 4))
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('objectName', LDAPDN()),
+        namedtype.NamedType('attributes', PartialAttributeList())
+)
 
 
 #------------------------------------------------------------------------------
 # SearchResultDone
 
 class SearchResultDone(LDAPResult):
-    tagSet = LDAPResult.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 5))
+    tagSet = LDAPResult.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 5))
 
 
 #------------------------------------------------------------------------------
-# SearchResultDone
+# SearchResultReference
+
+class SearchResultReference(univ.SequenceOf):
+    tagSet = univ.SequenceOf.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatSimple, 19))
+    componentType = namedtype.NamedType('uri', URI())
+    subtypeSpec=constraint.ValueSizeConstraint(1, MAX)
+
+#------------------------------------------------------------------------------
+# ModifyRequest
+
+class ModifyRequest(univ.Sequence):
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 6))
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('object', LDAPDN()),
+        namedtype.NamedType('changes',
+            univ.SequenceOf(componentType=namedtype.NamedType('change',
+                univ.Sequence(componentType=namedtype.NamedTypes(
+                    namedtype.NamedType('operation',
+                        univ.Enumerated(namedValues=namedval.NamedValues(
+                            ('add', 0),
+                            ('delete', 1),
+                            ('replace', 2)))
+                    ),
+                    namedtype.NamedType('modification', PartialAttribute())
+                ))
+            ))
+       )
+    )
+
+
+#------------------------------------------------------------------------------
+# ModifyResponse
+
+class ModifyResponse(LDAPResult):
+    tagSet = LDAPResult.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 7))
+
+
+#------------------------------------------------------------------------------
+# AddRequest
+
+class AddRequest(univ.Sequence):
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 8))
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('entry', LDAPDN()),
+        namedtype.NamedType('attributes', AttributeList())
+    )
+
+
+#------------------------------------------------------------------------------
+# AddResponse
+
+class AddResponse(LDAPResult):
+    tagSet = LDAPResult.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 9))
+
+
+#------------------------------------------------------------------------------
+# DelRequest
 
 class DelRequest(LDAPDN):
-    tagSet = LDAPDN.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatSimple, 10))
+    tagSet = LDAPDN.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatSimple, 10))
 
 
 #------------------------------------------------------------------------------
 # SearchResultDone
 
 class DelResponse(LDAPResult):
-    tagSet = LDAPResult.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 11))
+    tagSet = LDAPResult.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 11))
 
 
 #------------------------------------------------------------------------------
 # ExtendedRequest
 
+class ModifyDNRequest(univ.Sequence):
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 12))
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('entry', LDAPDN()),
+        namedtype.NamedType('newrdn', RelativeLDAPDN()),
+        namedtype.NamedType('deleteoldrdn', univ.Boolean()),
+        namedtype.OptionalNamedType('newSuperior', LDAPDN().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
+)
+
+
+#------------------------------------------------------------------------------
+# ModifyDNResponse
+
+class ModifyDNResponse(LDAPResult):
+    tagSet = LDAPResult.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 13))
+
+
+#------------------------------------------------------------------------------
+# CompareRequest
+
+class CompareRequest(univ.Sequence):
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 14))
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('entry', LDAPDN()),
+        namedtype.NamedType('ava', AttributeValueAssertion())
+)
+
+
+#------------------------------------------------------------------------------
+# CompareResponse
+
+class CompareResponse(LDAPResult):
+    tagSet = LDAPResult.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 15))
+
+
+#------------------------------------------------------------------------------
+# AbandonRequest
+
+class AbandonRequest(MessageID):
+    tagSet = MessageID.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatSimple, 16))
+
+#------------------------------------------------------------------------------
+# ExtendedRequest
+
 class ExtendedRequest(univ.Sequence):
-    tagSet = univ.Sequence.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 23))
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 23))
     componentType = namedtype.NamedTypes(
             namedtype.NamedType('requestName', LDAPOID().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
             namedtype.OptionalNamedType('requestValue', univ.OctetString().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
@@ -363,7 +520,7 @@ class ExtendedRequest(univ.Sequence):
 # IntermediateResponse
 
 class ExtendedResponse(univ.Sequence):
-    tagSet = univ.Sequence.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 24))
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 24))
     componentType = namedtype.NamedTypes(
             namedtype.NamedType('resultCode',
                 univ.Enumerated(namedValues=namedval.NamedValues(('success', 0), ('operationsError', 1), ('protocolError', 2), ('timeLimitExceeded', 3), ('sizeLimitExceeded', 4), ('compareFalse', 5), ('compareTrue', 6), ('authMethodNotSupported', 7), ('strongerAuthRequired', 8), ('referral', 10), ('adminLimitExceeded', 11), ('unavailableCriticalExtension', 12), ('confidentialityRequired', 13), ('saslBindInProgress', 14), ('noSuchAttribute', 16), ('undefinedAttributeType', 17), ('inappropriateMatching', 18), ('constraintViolation', 19), ('attributeOrValueExists', 20), ('invalidAttributeSyntax', 21), ('noSuchObject', 32), ('aliasProblem', 33), ('invalidDNSyntax', 34), ('aliasDereferencingProblem', 36), ('inappropriateAuthentication', 48), ('invalidCredentials', 49), ('insufficientAccessRights', 50), ('busy', 51), ('unavailable', 52), ('unwillingToPerform', 53), ('loopDetect', 54), ('namingViolation', 64), ('objectClassViolation', 65), ('notAllowedOnNonLeaf', 66), ('notAllowedOnRDN', 67), ('entryAlreadyExists', 68), ('objectClassModsProhibited', 69), ('affectsMultipleDSAs', 71), ('other', 80)))),
@@ -378,7 +535,7 @@ class ExtendedResponse(univ.Sequence):
 # IntermediateResponse
 
 class IntermediateResponse(univ.Sequence):
-    tagSet = univ.Sequence.tagSet.tagExplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 25))
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 25))
     componentType = namedtype.NamedTypes(
             namedtype.OptionalNamedType('responseName', LDAPOID().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
             namedtype.OptionalNamedType('responseValue', univ.OctetString().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
@@ -498,22 +655,22 @@ class LDAPMessage(univ.Sequence):
         namedtype.NamedType('protocolOp', univ.Choice(componentType=namedtype.NamedTypes(
             namedtype.NamedType('bindRequest', BindRequest()),
             namedtype.NamedType('bindResponse', BindResponse()),
-            #namedtype.NamedType('unbindRequest', UnbindRequest()),
+            namedtype.NamedType('unbindRequest', UnbindRequest()),
             namedtype.NamedType('searchRequest', SearchRequest()),
-            #namedtype.NamedType('searchResEntry', SearchResultEntry()),
+            namedtype.NamedType('searchResEntry', SearchResultEntry()),
             namedtype.NamedType('searchResDone', SearchResultDone()),
-            #namedtype.NamedType('searchResRef', SearchResultReference()),
-            #namedtype.NamedType('modifyRequest', ModifyRequest()),
-            #namedtype.NamedType('modifyResponse', ModifyResponse()),
-            #namedtype.NamedType('addRequest', AddRequest()),
-            #namedtype.NamedType('addResponse', AddResponse()),
+            namedtype.NamedType('searchResRef', SearchResultReference()),
+            namedtype.NamedType('modifyRequest', ModifyRequest()),
+            namedtype.NamedType('modifyResponse', ModifyResponse()),
+            namedtype.NamedType('addRequest', AddRequest()),
+            namedtype.NamedType('addResponse', AddResponse()),
             namedtype.NamedType('delRequest', DelRequest()),
             namedtype.NamedType('delResponse', DelResponse()),
-            #namedtype.NamedType('modDNRequest', ModifyDNRequest()),
-            #namedtype.NamedType('modDNResponse', ModifyDNResponse()),
-            #namedtype.NamedType('compareRequest', CompareRequest()),
-            #namedtype.NamedType('compareResponse', CompareResponse()),
-            #namedtype.NamedType('abandonRequest', AbandonRequest()),
+            namedtype.NamedType('modDNRequest', ModifyDNRequest()),
+            namedtype.NamedType('modDNResponse', ModifyDNResponse()),
+            namedtype.NamedType('compareRequest', CompareRequest()),
+            namedtype.NamedType('compareResponse', CompareResponse()),
+            namedtype.NamedType('abandonRequest', AbandonRequest()),
             namedtype.NamedType('extendedReq', ExtendedRequest()),
             namedtype.NamedType('extendedResp', ExtendedResponse()),
             namedtype.NamedType('intermediateResponse', IntermediateResponse())
@@ -604,27 +761,30 @@ if __name__ == '__main__':
     data = b'0\x0c\x02\x01\x01a\x07\n\x01\x00\x04\x00\x04\x00'
     print(data)
     bind_response = BindResponse()
-    bind_response['resultCode'] = 0
+    bind_response['resultCode'] = 'success'
     bind_response['matchedDN'] = ''
     bind_response['diagnosticMessage'] = ''
     ldapmessage = LDAPMessage()
     ldapmessage['messageID'] = 1
     ldapmessage['protocolOp'] = bind_response
     lm = encoder.encode(ldapmessage)
+    print('Self')
     print(lm)
-    debug.setLogger(debug.Debug('all'))
+    print(' '.join([ '%03i' % i for i in lm]))
+    ##debug.setLogger(debug.Debug('all'))
     x, _ = decoder.decode(data, LDAPMessage())
-    #print(x.prettyPrint())
+    print(x.prettyPrint())
     sys.exit(0)
 
     #x, _ = decoder.decode(data)
+    ##debug.setLogger(debug.Debug('all'))
+    ##x, _ = decoder.decode(data,LDAPMessage())
+
+    ##print(x.prettyPrint())
+
     debug.setLogger(debug.Debug('all'))
-    x, _ = decoder.decode(data,LDAPMessage())
-
-    print(x.prettyPrint())
-
-
     data = b'\n\x01\x00\x04\x00\x04\x00'
+    data = lm
 
     x, _ = decoder.decode(data)
     print(x.prettyPrint())

@@ -199,4 +199,68 @@ DEFINITIONS EXPLICIT TAGS ::= BEGIN
              requestName      [0] LDAPOID,
              requestValue     [1] OCTET STRING OPTIONAL }
 
+
+        UnbindRequest ::= [APPLICATION 2] NULL
+
+
+	AddRequest ::= [APPLICATION 8] SEQUENCE {
+             entry           LDAPDN,
+             attributes      AttributeList }
+
+	Attribute ::= SEQUENCE {
+             type       AttributeDescription,
+             vals       SET OF value AttributeValue }
+
+        AttributeList ::= SEQUENCE OF attribute Attribute
+
+	ModifyRequest ::= [APPLICATION 6] SEQUENCE {
+             object          LDAPDN,
+             changes         SEQUENCE OF change SEQUENCE {
+                  operation       ENUMERATED {
+                       add     (0),
+                       delete  (1),
+                       replace (2),
+                       ...  },
+                  modification    PartialAttribute } }
+
+	ModifyResponse ::= [APPLICATION 7] LDAPResult
+
+	AddResponse ::= [APPLICATION 9] LDAPResult
+
+	SearchResultEntry ::= [APPLICATION 4] SEQUENCE {
+             objectName      LDAPDN,
+             attributes      PartialAttributeList }
+
+        PartialAttributeList ::= SEQUENCE OF
+                             partialAttribute PartialAttribute
+
+        SearchResultReference ::= [APPLICATION 19] SEQUENCE
+                                  SIZE (1..MAX) OF uri URI
+
+        SearchResultDone ::= [APPLICATION 5] LDAPResult
+
+        AttributeValue ::= OCTET STRING
+
+        PartialAttribute ::= SEQUENCE {
+             type       AttributeDescription,
+             vals       SET OF value AttributeValue }
+
+	ModifyDNRequest ::= [APPLICATION 12] SEQUENCE {
+             entry           LDAPDN,
+             newrdn          RelativeLDAPDN,
+             deleteoldrdn    BOOLEAN,
+             newSuperior     [0] LDAPDN OPTIONAL }	
+
+	ModifyDNResponse ::= [APPLICATION 13] LDAPResult
+
+	CompareRequest ::= [APPLICATION 14] SEQUENCE {
+             entry           LDAPDN,
+             ava             AttributeValueAssertion }
+
+	CompareResponse ::= [APPLICATION 15] LDAPResult
+
+	AbandonRequest ::= [APPLICATION 16] MessageID
+
+	
+
 END
