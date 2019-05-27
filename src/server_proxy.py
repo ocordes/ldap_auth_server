@@ -83,7 +83,7 @@ def threaded(c):
 
 
         proxy_sock.send(in_data)
-        print('IN:    ', in_data)
+        print('IN:      ', in_data)
         #print('INh:   ', ' '.join([ '%02x' % i for i in data]))
         #print('INd:   ', ' '.join([ '%03i' % i for i in data]))
         print_decoded_data(in_data)
@@ -93,10 +93,10 @@ def threaded(c):
         out_data = receive_from(proxy_sock)
         c.send(out_data)
 
-        print('OUT:   ', out_data)
-        #if len(data) < 50:
-        #    print('OUTh:  ', ' '.join([ '%02x' % i for i in data]))
-        #    print('OUTd:  ', ' '.join([ '%03i' % i for i in data]))
+        print('OUT(%03i):' % len(out_data), out_data)
+        if len(out_data) < 1000:
+            #print('OUTh:   ', ' '.join([ '%02x' % i for i in out_data]))
+            print('OUTd:    ', ' '.join([ '%03i' % i for i in out_data]))
         print_decoded_data(out_data)
         sys.stdout.flush()
 

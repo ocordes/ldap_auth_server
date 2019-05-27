@@ -54,7 +54,7 @@ class AttributeDescription(LDAPString):
 
 
 class AttributeSelection(univ.SequenceOf):
-    componentType = namedtype.NamedType('selector', LDAPString())
+    componentType = LDAPString()
 
 
 class AttributeValueAssertion(univ.Sequence):
@@ -72,11 +72,13 @@ class Attribute(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('type', AttributeDescription()),
         namedtype.NamedType('vals', univ.SetOf(
-            componentType=namedtype.NamedType('value', AttributeValue())))
-)
+            componentType=AttributeValue()))
+            #componentType=univ.OctetString()))
+    )
+
 
 class AttributeList(univ.SequenceOf):
-    componentType = namedtype.NamedType('attribute', Attribute())
+    componentType = Attribute()
 
 
 class URI(LDAPString):
@@ -87,12 +89,12 @@ class PartialAttribute(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('type', AttributeDescription()),
         namedtype.NamedType('vals', univ.SetOf(
-            componentType=namedtype.NamedType('value', AttributeValue())))
+            componentType=AttributeValue()))
     )
 
 
 class PartialAttributeList(univ.SequenceOf):
-    componentType = namedtype.NamedType('partialAttribute', PartialAttribute())
+    componentType = PartialAttribute()
 
 
 # special types
@@ -145,7 +147,7 @@ class BindRequest(univ.Sequence):
 # BindResponse
 
 class Referral(univ.SequenceOf):
-    componentType = namedtype.NamedType('uri', URI())
+    componentType = URI()
     subtypeSpec=constraint.ValueSizeConstraint(1, MAX)
 
 
@@ -283,11 +285,11 @@ class MatchingRuleAssertion(univ.Sequence):
 class SubstringFilter(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('type', AttributeDescription()),
-        namedtype.NamedType('substrings', univ.SequenceOf(componentType=namedtype.NamedType('substring', univ.Choice(componentType=namedtype.NamedTypes(
+        namedtype.NamedType('substrings', univ.SequenceOf(componentType=univ.Choice(componentType=namedtype.NamedTypes(
             namedtype.NamedType('initial', AssertionValue().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
             namedtype.NamedType('any', AssertionValue().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
             namedtype.NamedType('final', AssertionValue().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
-            ))
+            )
         )).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)))
     )
 
@@ -397,7 +399,7 @@ class SearchResultDone(LDAPResult):
 
 class SearchResultReference(univ.SequenceOf):
     tagSet = univ.SequenceOf.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatSimple, 19))
-    componentType = namedtype.NamedType('uri', URI())
+    componentType = URI()
     subtypeSpec=constraint.ValueSizeConstraint(1, MAX)
 
 #------------------------------------------------------------------------------
@@ -408,8 +410,7 @@ class ModifyRequest(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('object', LDAPDN()),
         namedtype.NamedType('changes',
-            univ.SequenceOf(componentType=namedtype.NamedType('change',
-                univ.Sequence(componentType=namedtype.NamedTypes(
+            univ.SequenceOf(componentType=univ.Sequence(componentType=namedtype.NamedTypes(
                     namedtype.NamedType('operation',
                         univ.Enumerated(namedValues=namedval.NamedValues(
                             ('add', 0),
@@ -417,7 +418,7 @@ class ModifyRequest(univ.Sequence):
                             ('replace', 2)))
                     ),
                     namedtype.NamedType('modification', PartialAttribute())
-                ))
+                )
             ))
        )
     )
@@ -685,9 +686,12 @@ if __name__ == '__main__':
 
     data = b'0B\x02\x01\x01`=\x02\x01\x03\x042uid=ocordes@UNI-BONN.DE,ou=Users,dc=uni-bonn,dc=de\x80\x04sdsd'
 
+    data = b"0\x82\x02x\x02\x01\x02d\x82\x02q\x04,uid=omc,ou=People,dc=astro,dc=uni-bonn,dc=de0\x82\x02?0n\x04\x0bobjectClass1_\x04\x16inetLocalMailRecipient\x04\x0cposixAccount\x04\rinetOrgPerson\x04\x14organizationalPerson\x04\x06person\x04\nhostObject0\x19\x04\nloginShell1\x0b\x04\t/bin/bash0\x12\x04\tgidNumber1\x05\x04\x031000\x15\x04\x02cn1\x0f\x04\rOliver Cordes0\x0e\x04\x02sn1\x08\x04\x06Cordes0\x15\x04\tgivenName1\x08\x04\x06Oliver0\x1e\x04\x10mailLocalAddress1\n\x04\x08omcordes0\x18\x04\x0cemployeeType1\x08\x04\x06Intern0\x13\x04\tuidNumber1\x06\x04\x0419990'\x04\x04host1\x1f\x04\x07desktop\x04\x05ebhis\x04\x06portal\x04\x05theli0\x1d\x04\rhomeDirectory1\x0c\x04\n/users/omc08\x04\x0cuserPassword1(\x04&{SSHA}/W0okeqgj7NbCkymTDzm9FyO9IFSeEho00\x04\x04mail1(\x04\x15omc@astro.uni-bonn.de\x04\x0focordes@gmx.net0#\x04\x10departmentNumber1\x0f\x04\x01F\x04\x01M\x04\x01N\x04\x01R\x04\x01T0*\x04\x12mailRoutingAddress1\x14\x04\x12ocordes@freenet.de0\x0c\x04\x03uid1\x05\x04\x03omc0\x0c\x02\x01\x02e\x07\n\x01\x00\x04\x00\x04\x00"
 
-
-    #d = decoder.decode(data, asn1Spec=LDAPMessage())
+    debug.setLogger(debug.Debug('all'))
+    x, _ = decoder.decode(data, LDAPMessage())
+    print(x)
+    sys.exit(0)
 
     #print(d)
     print(data)
@@ -729,25 +733,7 @@ if __name__ == '__main__':
     print('Decoding real message')
     #print(decoder.decode(data))
 
-    # <Sequence value object at 0x10c84f6d8 tagSet=
-    #    <TagSet object at 0x10c84fd68 tags 0:32:16>
-    #       subtypeSpec=<ConstraintsIntersection object at 0x10c785ba8>
-    #       componentType=<NamedTypes object at 0x10c785c18 types >
-    #       sizeSpec=<ConstraintsIntersection object at 0x10c785be0>
-    #       payload [<Integer value object at 0x10c84fcc0 tagSet
-    #         <TagSet object at 0x10c84f5f8 tags 0:0:2> payload [1]>,
-    #            <Integer value object at 0x10c84fdd8 tagSet
-    #              <TagSet object at 0x10c84fda0 tags 0:0:2-64:32:0> payload [3]>]>
 
-
-    # <Sequence value object at 0x10c84fcc0 tagSet=
-    #    <TagSet object at 0x10c84fb38 tags 0:32:16>
-    #       subtypeSpec=<ConstraintsIntersection object at 0x10c785ba8>
-    #       componentType=<NamedTypes object at 0x10c785c18 types >
-    #       sizeSpec=<ConstraintsIntersection object at 0x10c785be0>
-    #       payload [<Integer value object at 0x10c84f6d8 tagSet
-    #         <TagSet object at 0x10c84f5f8 tags 0:0:2> payload [1]>,
-    #            <Sequence value object at 0x10c84fac8 tagSet=<TagSet object at 0x10c84f898 tags 0:32:16> subtypeSpec=<ConstraintsIntersection object at 0x10c785ba8> componentType=<NamedTypes object at 0x10c785c18 types > sizeSpec=<ConstraintsIntersection object at 0x10c785be0> payload [<Integer value object at 0x10c84f748 tagSet <TagSet object at 0x10c84f5f8 tags 0:0:2> payload [3]>, <OctetString value object at 0x10c84f8d0 tagSet <TagSet object at 0x10c84f828 tags 0:0:4> encoding iso-8859-1 payload [uid=ocordes@UNI-...c=uni-bonn,dc=de]>, <SequenceOf value object at 0x10c84fa58 tagSet=<TagSet object at 0x10c84fa20 tags 0:32:16> subtypeSpec=<ConstraintsIntersection object at 0x10c785748> componentType=None sizeSpec=<ConstraintsIntersection object at 0x10c785780> payload [<OctetString value object at 0x10c84f940 tagSet <TagSet object at 0x10c84f828 tags 0:0:4> encoding iso-8859-1 payload []>, <OctetString value object at 0x10c84f9e8 tagSet <TagSet object at 0x10c84f828 tags 0:0:4> encoding iso-8859-1 payload [credential]>]>]>]>, b'
 
 
     x, _ = decoder.decode(data, LDAPMessage())
