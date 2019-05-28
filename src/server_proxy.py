@@ -29,6 +29,7 @@ def decode_data(data):
 
 
 def print_decoded_data(data):
+    if len(data) == 0: return
     x = decode_data(data)
     if x is not None:
         print(x.prettyPrint())

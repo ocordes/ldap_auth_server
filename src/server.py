@@ -9,6 +9,8 @@ import threading
 # Imports from pyasn1
 from pyasn1.type import tag, namedtype, namedval, univ, constraint
 
+from ldap.protocol import *
+from pyasn1.codec.ber import encoder, decoder
 
 
 
@@ -17,13 +19,39 @@ print_lock = threading.Lock()
 # https://tools.ietf.org/html/rfc4511
 
 
+def receive_from(connection):
+    buffer = b""
+
+    # we set a 2 second timeout; depending on your
+    # target, this may need to be adjusted
+    connection.settimeout(0.05)
+
+    try:
+        # keep reading into the buffer until
+        # there's no more data or we timeout
+        count = 0
+        while True:
+            count += 1
+            data = connection.recv(4096)
+
+            if not data:
+                break
+
+            buffer += data
+
+    except:
+        pass
+
+    return buffer
+
 
 # thread fuction
 def threaded(c):
     while True:
 
         # data received from client
-        data = c.recv(1024)
+        data = receive_from(c)
+
         if not data:
             print('Bye')
 
@@ -39,13 +67,7 @@ def threaded(c):
         print(data)
 
 
-        s = b'0\x1c\x02\x01\x01a\x170\x15\n\x01\x00\x04\x05Hallo\x04\x07Success\xa3\x00'
-        #s = b'0\x1c\x02\x01\x02a\x170\x15\n\x01\x00\x04\x05Hallo\x04\x07Success\xa3\x00'
-
-
-        #s = b'0\x1c\x02\x01\x01a\x170\x15\n\x01\x01\x04\x05Hallo\x04\x07Success\xa3\x00'
-        s = b'0\x1c\x02\x01\x02a\x170\x15\n\x01\x01\x04\x05Hallo\x04\x07Success\xa3\x00'
-        s = b'0\x1c\x02\x01\x02a\x170\x15\n\x011\x04\x05Hallo\x04\x07Success\xa3\x00'
+        s = b'0\x0c\x02\x01\x01a\x07\n\x01\x00\x04\x00\x04\x00'
         c.send(s)
         #c.send(s)
 
@@ -62,7 +84,20 @@ def Main():
     # can be anything
     port = 389
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host, port))
+
+    nr_bind = 10
+    while True:
+        try:
+            s.bind((host, port))
+            break
+        except:
+            nr_bind -= 1
+            if nr_bind == 0:
+                sys.exit(0)
+            else:
+                print('Bind failed! Nr of tries: %i' %nr_bind)
+                time.sleep(1)
+
     print("socket binded to post", port)
 
     # put the socket into listening mode
