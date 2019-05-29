@@ -200,7 +200,7 @@ class LDAPResult(univ.Sequence):
         namedtype.NamedType('resultCode', ResultCode()),
         namedtype.NamedType('matchedDN', LDAPDN()),
         namedtype.NamedType('diagnosticMessage', LDAPString()),
-        namedtype.OptionalNamedType('referral', Referral().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3)))
+        #namedtype.OptionalNamedType('referral', Referral().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3)))
     )
 
 
@@ -253,7 +253,7 @@ class BindResponse(univ.Sequence):
                  ('other', 80)))),
         namedtype.NamedType('matchedDN', LDAPDN()),
         namedtype.NamedType('diagnosticMessage', LDAPString()),
-        namedtype.OptionalNamedType('referral', Referral().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+        #namedtype.OptionalNamedType('referral', Referral().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
         namedtype.OptionalNamedType('serverSaslCreds', univ.OctetString().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7)))
     )
 
@@ -377,7 +377,7 @@ class SearchRequest(univ.Sequence):
     )
 
 #------------------------------------------------------------------------------
-# SearchResultDone
+# SearchResultEntry
 
 class SearchResultEntry(univ.Sequence):
     tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 4))
