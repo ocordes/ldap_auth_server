@@ -1,5 +1,7 @@
 # import socket programming library
-import socket
+
+import os, sys
+import socket, time
 
 # import thread module
 from _thread import *
@@ -10,6 +12,7 @@ import threading
 from pyasn1.type import tag, namedtype, namedval, univ, constraint
 
 from ldap.protocol import *
+from ldap.ldap_objects import *
 from pyasn1.codec.ber import encoder, decoder
 
 
@@ -17,6 +20,25 @@ from pyasn1.codec.ber import encoder, decoder
 print_lock = threading.Lock()
 
 # https://tools.ietf.org/html/rfc4511
+
+
+def decode_data(data):
+    try:
+        x, _ = decoder.decode(data, LDAPMessage())
+    except:
+        x = None
+
+    return x
+
+
+def print_decoded_data(data):
+    if len(data) == 0: return
+    x = decode_data(data)
+    if x is not None:
+        print(x.prettyPrint())
+    else:
+        print('NONE (Error)')
+
 
 
 def receive_from(connection):
@@ -65,7 +87,8 @@ def threaded(c):
         # send back reversed string to client
         #c.send(data)
         print(data)
-
+        print_decoded_data(data)
+        obj = decode_message(data)
 
         s = b'0\x0c\x02\x01\x01a\x07\n\x01\x00\x04\x00\x04\x00'
         c.send(s)

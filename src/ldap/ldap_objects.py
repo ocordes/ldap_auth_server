@@ -26,8 +26,12 @@ decode_message
 """
 def decode_message(msg_data):
     try:
-        x, _ = decoder.decode(data, LDAPMessage())
+        x, _ = decoder.decode(msg_data, LDAPMessage())
+
+        print(x['protocolOp'])
+        print(x['protocolOp'].getTypeId())
     except:
+        print('Error')
         x = None
 
     return x
