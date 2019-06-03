@@ -602,13 +602,18 @@ class Control(univ.Sequence):
         namedtype.OptionalNamedType('controlValue', univ.OctetString()))
 
 
-class Controls(univ.Sequence):
+class Controls2(univ.Sequence):
     """
     Controls ::= SEQUENCE OF control Control
     """
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('control', Control()),
         )
+
+
+class Controls(univ.OctetString):
+    tagSet = univ.OctetString.tagSet.tagImplicitly(tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
 
 
 
@@ -677,7 +682,8 @@ class LDAPMessage(univ.Sequence):
             namedtype.NamedType('intermediateResponse', IntermediateResponse())
             ))
         ),
-        namedtype.OptionalNamedType('controls', Controls().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
+        #namedtype.OptionalNamedType('controls', Controls().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
+        namedtype.OptionalNamedType('controls', Controls()),
     )
 
 

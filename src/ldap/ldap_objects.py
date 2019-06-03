@@ -13,6 +13,8 @@ from ldap.protocol import *
 
 from ldap.auth_provider import htpasswd_auth_provider
 
+from pyasn1 import debug
+
 
 class LDAP_Object(object):
     def __init__(self):
@@ -165,6 +167,7 @@ class LDAP_Server(object):
 
 
     def handle_message(self, data):
+        #debug.setLogger(debug.Debug('all'))
         try:
             x, _ = decoder.decode(data, LDAPMessage())
         except:
@@ -221,4 +224,5 @@ class LDAP_Server(object):
 
 
             print(data)
+            #print('d:', ' '.join([str(i) for i in data]))
             self.handle_message(data)
