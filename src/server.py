@@ -17,6 +17,7 @@ from ldap.ldap_objects import LDAP_Server
 from pyasn1.codec.ber import encoder, decoder
 
 from ldap.auth_provider import htpasswd_auth_provider, \
+                                sasl_auth_provider, \
                                 pam_auth_provider, \
                                 unix_auth_provider, \
                                 test_auth_provider, \
@@ -34,7 +35,7 @@ def search_ini_file():
 
     for i in dirs:
         fname = os.path.join(i, ini_filename)
-        
+
         if os.access(fname, os.R_OK):
             return fname
 
@@ -75,9 +76,15 @@ def create_auth_provider():
         else:
             print('TEST section not found!')
             credentials = 'test:test'
-
         auth_provider = test_auth_provider(credentials, realm=realm)
-
+    elif provider == 'SASL':
+        print('Using sasl authentication provider...')
+        if provider in config:
+            binary = config[provider].get('binary', '/bin/ls')
+        else:
+            print('SASL section not found!')
+            binary = '/bin/ls'
+        auth_provider = sasl_auth_provider(binary)
     else:
         auth_provider = auth_provider
 

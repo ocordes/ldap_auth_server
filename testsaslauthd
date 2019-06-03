@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# example testsaslauthd -r UNI-BONN.DE   -u ocordes -p
+
+# results:
+
+# 0: OK "Success."
+# 0: NO "authentication failed"
+
+
+if [ "$4" == "ocordes" ]; then
+  echo '0: OK "Success."'
+else
+  echo '0: NO "authentication failed"'
+fi
