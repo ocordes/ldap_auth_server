@@ -2,6 +2,7 @@
 
 import os, sys
 import socket, time
+import configparser
 
 # import thread module
 from _thread import *
@@ -15,29 +16,93 @@ from ldap.protocol import *
 from ldap.ldap_objects import LDAP_Server
 from pyasn1.codec.ber import encoder, decoder
 
+from ldap.auth_provider import htpasswd_auth_provider, \
+                                pam_auth_provider, \
+                                unix_auth_provider, \
+                                test_auth_provider, \
+                                yes_auth_provider, \
+                                auth_provider
 
 
 print_lock = threading.Lock()
 
-# https://tools.ietf.org/html/rfc4511
 
+ini_filename = 'ldap_auth.ini'
+
+def search_ini_file():
+    dirs = ['.', '/etc']
+
+    for i in dirs:
+        fname = os.path.join(i, ini_filename)
+        
+        if os.access(fname, os.R_OK):
+            return fname
+
+    print('Cannot find any ini-file!')
+    return None
+
+
+def create_auth_provider():
+    fname = search_ini_file()
+    if fname is None:
+        # this is the simplest ...
+        return pam_auth_provider()
+
+    config = configparser.ConfigParser()
+    if len(config.read(fname)) == 0:
+        return pam_auth_provider()
+
+    default_config = config['DEFAULT']
+    provider = str(default_config.get('provider', 'pam')).upper()
+    realm = default_config.get('realm', None)
+
+
+    if provider == 'PAM':
+        print('Using PAM authentication provider...')
+        auth_provider = pam_auth_provider(realm=realm)
+    elif provider == 'HTPASSWD':
+        print('Using htpasswd authentication provider...')
+        if provider in config:
+            htpasswd = config[provider].get('htpasswd', 'htpasswd')
+        else:
+            print('HTPASSWD section not found!')
+            htpasswd = 'htpasswd'
+        auth_provider = htpasswd_auth_provider(htpasswd, realm=realm)
+    elif provider == 'TEST':
+        print('Using test authentication provider...')
+        if provider in config:
+            credentials = config[provider].get('credentials', 'test:test')
+        else:
+            print('TEST section not found!')
+            credentials = 'test:test'
+
+        auth_provider = test_auth_provider(credentials, realm=realm)
+
+    else:
+        auth_provider = auth_provider
+
+
+    return auth_provider
 
 
 # thread fuction
 
-def threaded(c):
-    ldap_server = LDAP_Server(c)
+def threaded(connection, auth_provider):
+    ldap_server = LDAP_Server(connection, auth_provider)
 
     ldap_server.run()
     print_lock.release()
     # connection closed
     print('Closing the connection!')
-    c.close()
+    connection.close()
 
 
 
 def Main():
     host = ""
+
+
+    auth_provider = create_auth_provider()
 
     # reverse a port on your computer
     # in our case it is 12345 but it
@@ -76,7 +141,7 @@ def Main():
             print('Connected to :', addr[0], ':', addr[1])
 
             # Start a new thread and return its identifier
-            start_new_thread(threaded, (c,))
+            start_new_thread(threaded, (c,auth_provider))
     except:
         pass
     s.close()

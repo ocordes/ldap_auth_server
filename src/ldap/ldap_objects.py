@@ -11,6 +11,8 @@ from pyasn1.codec.ber import encoder, decoder
 
 from ldap.protocol import *
 
+from ldap.auth_provider import htpasswd_auth_provider
+
 
 class LDAP_Object(object):
     def __init__(self):
@@ -87,25 +89,35 @@ class LDAP_SearchResultDone(LDAP_Result):
 
 
 class LDAP_Server(object):
-    def __init__(self, connection):
+    def __init__(self, connection, auth_provider):
         self._connection = connection
         self._msgid      = 1
 
         # auth data
-        self._authentificated = False
+        self._authenticated = False
         self._name = None
         self._version = 3
         self._credentials = None
         self._auth_type = 0
         self._mechanism = None
 
+        # authentification provider
+        self._auth_provider = auth_provider
+
     # do the authentification
-    def _check_authentification(self):
+    def _check_authentication(self):
         if self._credentials == '':
             return 53, 'unauthenticated bind (DN with no password) disallowed'
         else:
-            self._authentificated = True
-            return 0, None
+            credentials = { 'user' : self._name,
+                            'password' : self._credentials,
+                            'mechanism': self._mechanism }
+
+            self._authenticated = self._auth_provider.authenticate(credentials)
+            if self._authenticated:
+                return 0, None
+            else:
+                return 49, 'invalid username/password settings'
 
 
     # deal with the LDAP messages
@@ -124,7 +136,7 @@ class LDAP_Server(object):
             self._credentials = str(x['credentials'])
             self._mechanism  = x['mechanism']
 
-        result, msg = self._check_authentification()
+        result, msg = self._check_authentication()
 
         # send the response
         bind_response = LDAP_BindResponse()
@@ -143,7 +155,7 @@ class LDAP_Server(object):
         self._credentials = None
         self._auth_type = 0
         self._mechanism = None
-        self._authentificated = False
+        self._authenticated = False
 
 
     def SearchRequest(self, data):
