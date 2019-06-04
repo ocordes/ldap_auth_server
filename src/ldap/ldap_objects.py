@@ -17,16 +17,17 @@ from pyasn1 import debug
 
 
 class LDAP_Object(object):
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, debug=False):
         self._logger = logger
+        self._debug  = debug
 
 
     def send(self, connection, newdata):
         data = encoder.encode(newdata)
-        if self._logger is not None:
+        if (self._logger is not None) and self._debug:
             self._logger.write('-->', data)
         x, _ = decoder.decode(data, LDAPMessage())
-        if self._logger is not None:
+        if (self._logger is not None) and self._debug:
             self._logger.write(x)
         connection.send(data)
 
@@ -37,8 +38,8 @@ class LDAP_Object(object):
 
 
 class LDAP_Result(LDAP_Object):
-    def __init__(self, result_code=53, logger=None):
-        LDAP_Object.__init__(self, logger=logger)
+    def __init__(self, result_code=53, logger=None, debug=False):
+        LDAP_Object.__init__(self, logger=logger, debug=debug)
 
         # copy the information from the asn1 structure
 
@@ -62,8 +63,8 @@ class LDAP_Result(LDAP_Object):
 
 
 class LDAP_BindResponse(LDAP_Result):
-    def __init__(self, logger=None):
-        LDAP_Result.__init__(self, 53, logger=logger)
+    def __init__(self, logger=None, debug=False):
+        LDAP_Result.__init__(self, 53, logger=logger, debug=debug)
 
     def run(self, connection, msgid):
         bind_response = BindResponse()
@@ -77,8 +78,8 @@ class LDAP_BindResponse(LDAP_Result):
 
 
 class LDAP_SearchResultDone(LDAP_Result):
-    def __init__(self, logger=None):
-        LDAP_Result.__init__(self, 32, logger=logger)
+    def __init__(self, logger=None, debug=False):
+        LDAP_Result.__init__(self, 32, logger=logger, debug=debug)
 
 
     def run(self, connection, msgid):
@@ -93,8 +94,9 @@ class LDAP_SearchResultDone(LDAP_Result):
 
 
 class LDAP_Server(object):
-    def __init__(self, connection, auth_provider, logger=None):
+    def __init__(self, connection, auth_provider, logger=None, debug=False):
         self._logger = logger
+        self._debug = debug
         self._connection = connection
         self._msgid      = 1
 
@@ -148,13 +150,13 @@ class LDAP_Server(object):
         result, msg = self._check_authentication()
 
         # send the response
-        bind_response = LDAP_BindResponse()
+        bind_response = LDAP_BindResponse(logger=self._logger, debug=self._debug)
         bind_response.resultCode(result)
         if msg is not None:
             bind_response.diagMessage(msg)
 
         bind_response.run(self._connection, self._msgid)
-        self._msgid += 1
+        #self._msgid += 1
 
 
     def UnbindRequest(self, data):
@@ -168,7 +170,7 @@ class LDAP_Server(object):
 
 
     def SearchRequest(self, data):
-        search_result_done = LDAP_SearchResultDone()
+        search_result_done = LDAP_SearchResultDone(logger=self._logger, debug=self._debug)
         search_result_done.run(self._connection, self._msgid)
         self._msgid += 1
 
@@ -177,15 +179,18 @@ class LDAP_Server(object):
         #debug.setLogger(debug.Debug('all'))
         try:
             x, _ = decoder.decode(data, LDAPMessage())
+            if (self._logger is not None) and self._debug:
+                self._logger.write(x)
+            self._msgid = x['messageID']
         except:
-            if self._logger is not None:
+            if (self._logger is not None) and self._debug:
                 self._logger.write('Error while decoding message')
             x = None
 
         if x is not None:
             op_x = x['protocolOp']
             op = op_x.getName()
-            if self._logger is not None:
+            if (self._logger is not None) and self._debug:
                 self._logger.write('LDAPMessage ->', op)
             if op == 'bindRequest':
                 self.BindRequest(op_x.getComponent())
