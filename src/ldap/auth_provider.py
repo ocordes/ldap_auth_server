@@ -27,11 +27,13 @@ import ldap.logger as log
 
 
 class auth_provider(object):
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, whitelist=None):
         self._logger = logger
 
         if self._logger is None:
             self._logger = log.logger(log.LOGGER_STDOUT)
+
+        self._whitelist = whitelist
 
 
     def authenticate(self, credentials):
@@ -48,8 +50,8 @@ basic class to split a LDAP username into some real
 usernam + real
 """
 class realm_auth_provider(auth_provider):
-    def __init__(self, realm=None, logger=None):
-        auth_provider.__init__(self,logger=logger)
+    def __init__(self, realm=None, logger=None, whitelist=None):
+        auth_provider.__init__(self,logger=logger, whitelist=whitelist)
 
         self._realm = realm
         if realm is None:
@@ -76,8 +78,8 @@ gss_realm_auth_provider
 provides a seperation of the username into a real username and a realm
 """
 class gss_realm_auth_provider(auth_provider):
-    def __init__(self, logger=None):
-        auth_provider.__init__(self,logger=logger)
+    def __init__(self, logger=None, whitelist=None):
+        auth_provider.__init__(self,logger=logger, whitelist=whitelist)
 
         self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z]+),(?P<realm>.+)')
         self._realm_re = re.compile('dc=(?P<dc>[a-zA-Z\-_]+)')
@@ -120,8 +122,8 @@ takes a simple string as username:password combination, comma seperated
 """
 
 class test_auth_provider(realm_auth_provider):
-    def __init__(self, credentials, realm=None, logger=None):
-        realm_auth_provider.__init__(self, realm=realm, logger=logger)
+    def __init__(self, credentials, realm=None, logger=None, whitelist=None):
+        realm_auth_provider.__init__(self, realm=realm, logger=logger, whitelist=whitelist)
 
         self._data = {}
         c = credentials.replace(' ', '')
@@ -137,10 +139,15 @@ class test_auth_provider(realm_auth_provider):
 
         username = self.get_real_username(username)
 
-        if username in self._data:
-            return password == self._data[username]
+        if self._whitelist.whitelisted(username):
+            # accept by whitelist
+            if username in self._data:
+                return password == self._data[username]
+            else:
+                return False
         else:
             return False
+
 
 
 """
@@ -151,8 +158,8 @@ is necessary to extract the username from a LDAP People element!
 
 """
 class htpasswd_auth_provider(realm_auth_provider):
-    def __init__(self, filename, realm=None, logger=None):
-        realm_auth_provider.__init__(self,realm=realm, logger=logger)
+    def __init__(self, filename, realm=None, logger=None, whitelist=None):
+        realm_auth_provider.__init__(self,realm=realm, logger=logger, whitelist=whitelist)
 
         self._data = HtpasswdFile(filename)
 
@@ -205,8 +212,8 @@ pam_auth_provider
 is a simple authentication provider for unix accounts via PAM
 """
 class pam_auth_provider(realm_auth_provider):
-    def __init__(self, realm=None, service='login', logger=None):
-        realm_auth_provider.__init__(self, realm=realm, logger=logger)
+    def __init__(self, realm=None, service='login', logger=None, whitelist=None):
+        realm_auth_provider.__init__(self, realm=realm, logger=logger, whitelist=whitelist)
 
         self._pam = pam.pam()
         self._service = service
@@ -227,8 +234,8 @@ sasl_auth_provider
 is a simple authentication provider which uses sasl to authenticate
 """
 class sasl_auth_provider(gss_realm_auth_provider):
-    def __init__(self, binary, service='ldap', logger=None):
-        gss_realm_auth_provider.__init__(self, logger=logger)
+    def __init__(self, binary, service='ldap', logger=None, whitelist=None):
+        gss_realm_auth_provider.__init__(self, logger=logger, whitelist=whitelist)
 
         self._binary = binary
 
@@ -272,8 +279,8 @@ WARNING: the authentication mechanism works as follows, the library
          kinit ! Nothing more is done! The library warns about KDC spoofing!
 """
 class krb5_auth_provider(gss_realm_auth_provider):
-    def __init__(self, service=None, logger=None):
-        gss_realm_auth_provider.__init__(self, logger=logger)
+    def __init__(self, service=None, logger=None, whitelist=None):
+        gss_realm_auth_provider.__init__(self, logger=logger, whitelist=whitelist)
 
         self._service = service
 

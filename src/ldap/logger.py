@@ -21,7 +21,7 @@ class logger(object):
 
         if logtype == LOGGER_FILE:
             try:
-                self._logfile = open(logfilename, 'w')
+                self._logfile = open(logfilename, 'a+')
             except:
                 self._logfile = sys.stderr
         elif logtype == LOGGER_STDOUT:
