@@ -21,12 +21,17 @@ from hmac import compare_digest as compare_hash
 import re
 import subprocess
 
+import ldap.logger as log
+
 
 
 
 class auth_provider(object):
-    def __init__(self):
-        pass
+    def __init__(self, logger=None):
+        self._logger = logger
+
+        if self._logger is None:
+            self._logger = log.logger(log.LOGGER_STDOUT)
 
 
     def authenticate(self, credentials):
@@ -43,8 +48,8 @@ basic class to split a LDAP username into some real
 usernam + real
 """
 class realm_auth_provider(auth_provider):
-    def __init__(self, realm=None):
-        auth_provider.__init__(self)
+    def __init__(self, realm=None, logger=None):
+        auth_provider.__init__(self,logger=logger)
 
         self._realm = realm
         if realm is None:
@@ -71,8 +76,8 @@ gss_realm_auth_provider
 provides a seperation of the username into a real username and a realm
 """
 class gss_realm_auth_provider(auth_provider):
-    def __init__(self):
-        auth_provider.__init__(self)
+    def __init__(self, logger=None):
+        auth_provider.__init__(self,logger=logger)
 
         self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z]+),(?P<realm>.+)')
         self._realm_re = re.compile('dc=(?P<dc>[a-zA-Z\-_]+)')
@@ -115,8 +120,8 @@ takes a simple string as username:password combination, comma seperated
 """
 
 class test_auth_provider(realm_auth_provider):
-    def __init__(self, credentials, realm=None):
-        realm_auth_provider.__init__(self,realm=realm)
+    def __init__(self, credentials, realm=None, logger=None):
+        realm_auth_provider.__init__(self, realm=realm, logger=logger)
 
         self._data = {}
         c = credentials.replace(' ', '')
@@ -146,8 +151,8 @@ is necessary to extract the username from a LDAP People element!
 
 """
 class htpasswd_auth_provider(realm_auth_provider):
-    def __init__(self, filename, realm=None):
-        realm_auth_provider.__init__(self,realm=realm)
+    def __init__(self, filename, realm=None, logger=None):
+        realm_auth_provider.__init__(self,realm=realm, logger=logger)
 
         self._data = HtpasswdFile(filename)
 
@@ -200,8 +205,8 @@ pam_auth_provider
 is a simple authentication provider for unix accounts via PAM
 """
 class pam_auth_provider(realm_auth_provider):
-    def __init__(self, realm=None, service='login'):
-        realm_auth_provider.__init__(self, realm=realm)
+    def __init__(self, realm=None, service='login', logger=None):
+        realm_auth_provider.__init__(self, realm=realm, logger=logger)
 
         self._pam = pam.pam()
         self._service = service
@@ -222,8 +227,8 @@ sasl_auth_provider
 is a simple authentication provider which uses sasl to authenticate
 """
 class sasl_auth_provider(gss_realm_auth_provider):
-    def __init__(self, binary, service='ldap'):
-        gss_realm_auth_provider.__init__(self)
+    def __init__(self, binary, service='ldap', logger=None):
+        gss_realm_auth_provider.__init__(self, logger=logger)
 
         self._binary = binary
 
@@ -231,13 +236,8 @@ class sasl_auth_provider(gss_realm_auth_provider):
     def call_saslauthd(self, user, password):
         username, realm = self.get_real_username(user)
 
-        print(username)
-        print(realm)
-
-
         cmd = '{} -r {} -u {} -p {}'.format(self._binary, realm, username, password)
 
-        print(cmd)
 
         p = subprocess.Popen(cmd, shell=True, bufsize=-1, close_fds=True,
                              stdin=subprocess.PIPE,
@@ -246,7 +246,6 @@ class sasl_auth_provider(gss_realm_auth_provider):
 
         line = p.stdout.readline().decode('utf-8')
 
-        print(line)
 
         rex = re.compile(r'0: (?P<result>[A-Z]+) "(?P<msg>.+)"')
         m = rex.search(line)
@@ -273,8 +272,8 @@ WARNING: the authentication mechanism works as follows, the library
          kinit ! Nothing more is done! The library warns about KDC spoofing!
 """
 class krb5_auth_provider(gss_realm_auth_provider):
-    def __init__(self, service=None):
-        gss_realm_auth_provider.__init__(self)
+    def __init__(self, service=None, logger=None):
+        gss_realm_auth_provider.__init__(self, logger=logger)
 
         self._service = service
 
@@ -292,8 +291,8 @@ class krb5_auth_provider(gss_realm_auth_provider):
         try:
             return kerberos.checkPassword(username, password, service, realm)
         except kerberos.BasicAuthError as e:
-            print(e)
+            self._logger.write('kerberos.BasicAuthError: {} ({})'.format(*e.args))
             return False
         except:
-            print('Other Error')
+            self._logger.write('kerberos.Error: Unknown Error')
             return False

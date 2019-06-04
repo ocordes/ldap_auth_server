@@ -26,6 +26,12 @@ from ldap.auth_provider import htpasswd_auth_provider, \
                                 auth_provider
 
 
+import ldap.logger as log
+
+logger = log.logger(log.LOGGER_FILE) # logs into a file
+
+
+
 print_lock = threading.Lock()
 
 
@@ -40,7 +46,7 @@ def search_ini_file():
         if os.access(fname, os.R_OK):
             return fname
 
-    print('Cannot find any ini-file!')
+    logger.write('Cannot find any ini-file!')
     return None
 
 
@@ -48,11 +54,11 @@ def create_auth_provider():
     fname = search_ini_file()
     if fname is None:
         # this is the simplest ...
-        return pam_auth_provider()
+        return pam_auth_provider(logger=logger)
 
     config = configparser.ConfigParser()
     if len(config.read(fname)) == 0:
-        return pam_auth_provider()
+        return pam_auth_provider(logger=logger)
 
     default_config = config['DEFAULT']
     provider = str(default_config.get('provider', 'pam')).upper()
@@ -60,41 +66,40 @@ def create_auth_provider():
 
 
     if provider == 'PAM':
-        print('Using PAM authentication provider...')
-        auth_provider = pam_auth_provider(realm=realm)
+        logger.write('Using PAM authentication provider...')
+        auth_provider = pam_auth_provider(realm=realm, logger=logger)
     elif provider == 'HTPASSWD':
         print('Using htpasswd authentication provider...')
         if provider in config:
             htpasswd = config[provider].get('htpasswd', 'htpasswd')
         else:
-            print('HTPASSWD section not found!')
+            logger.write('HTPASSWD section not found!')
             htpasswd = 'htpasswd'
-        auth_provider = htpasswd_auth_provider(htpasswd, realm=realm)
+        auth_provider = htpasswd_auth_provider(htpasswd, realm=realm, logger=logger)
     elif provider == 'TEST':
-        print('Using test authentication provider...')
+        logger.write('Using test authentication provider...')
         if provider in config:
             credentials = config[provider].get('credentials', 'test:test')
         else:
-            print('TEST section not found!')
+            logger.write('TEST section not found!')
             credentials = 'test:test'
-        auth_provider = test_auth_provider(credentials, realm=realm)
+        auth_provider = test_auth_provider(credentials, realm=realm, logger=logger)
     elif provider == 'SASL':
-        print('Using sasl authentication provider...')
+        logger.write('Using sasl authentication provider...')
         if provider in config:
             binary = config[provider].get('binary', '/bin/ls')
         else:
-            print('SASL section not found!')
+            logger.write('SASL section not found!')
             binary = '/bin/ls'
-        auth_provider = sasl_auth_provider(binary)
-
+        auth_provider = sasl_auth_provider(binary, logger=logger)
     elif provider == 'KRB5':
-        print('Using krb5 authentication provider...')
+        logger.write('Using krb5 authentication provider...')
         if provider in config:
             service = config[provider].get('service', None)
         else:
-            print('KRB5 section not found!')
+            logger.write('KRB5 section not found!')
             service = None
-        auth_provider = krb5_auth_provider(service)
+        auth_provider = krb5_auth_provider(service, logger=logger)
     else:
         auth_provider = auth_provider
 
@@ -105,12 +110,12 @@ def create_auth_provider():
 # thread fuction
 
 def threaded(connection, auth_provider):
-    ldap_server = LDAP_Server(connection, auth_provider)
+    ldap_server = LDAP_Server(connection, auth_provider, logger=logger)
 
     ldap_server.run()
     print_lock.release()
     # connection closed
-    print('Closing the connection!')
+    logger.write('Closing the connection!')
     connection.close()
 
 
@@ -137,14 +142,14 @@ def Main():
             if nr_bind == 0:
                 sys.exit(0)
             else:
-                print('Bind failed! Nr of tries: %i' %nr_bind)
+                logger.write('Bind failed! Nr of tries: %i' %nr_bind)
                 time.sleep(1)
 
-    print("socket binded to post", port)
+    logger.write('Socket binded to port', port)
 
     # put the socket into listening mode
     s.listen(5)
-    print("socket is listening")
+    logger.write('Socket is listening')
 
     # a forever loop until client wants to exit
     try:
@@ -155,7 +160,7 @@ def Main():
 
             # lock acquired by client
             print_lock.acquire()
-            print('Connected to :', addr[0], ':', addr[1])
+            logger.write('Connected to :', addr[0], ':', addr[1])
 
             # Start a new thread and return its identifier
             start_new_thread(threaded, (c,auth_provider))
