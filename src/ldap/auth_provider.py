@@ -75,9 +75,11 @@ class gss_realm_auth_provider(auth_provider):
         auth_provider.__init__(self)
 
         self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z]+),(?P<realm>.+)')
+        self._realm_re = re.compile('dc=(?P<dc>[a-zA-Z\-_]+)')
 
 
     def get_real_username(self, name):
+
         m = self._re.search(name)
 
         if m is None:
@@ -86,6 +88,8 @@ class gss_realm_auth_provider(auth_provider):
         else:
             username = m.group('user')
             realm = m.group('realm')
+            # now split the realm into Domain
+            realm = '.'.join(self._realm_re.findall(realm))
 
         return username, realm
 
@@ -233,6 +237,8 @@ class sasl_auth_provider(gss_realm_auth_provider):
 
         cmd = '{} -r {} -u {} -p {}'.format(self._binary, realm, username, password)
 
+        print(cmd)
+
         p = subprocess.Popen(cmd, shell=True, bufsize=-1, close_fds=True,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
@@ -240,11 +246,13 @@ class sasl_auth_provider(gss_realm_auth_provider):
 
         line = p.stdout.readline().decode('utf-8')
 
+        print(line)
+
         rex = re.compile(r'0: (?P<result>[A-Z]+) "(?P<msg>.+)"')
         m = rex.search(line)
         if m is None:
             return None, None
-        return m['result'], m['msg']
+        return m.group('result'), m.group('msg')
 
 
     def authenticate(self, credentials):
@@ -268,18 +276,20 @@ class krb5_auth_provider(gss_realm_auth_provider):
     def __init__(self, service=None):
         gss_realm_auth_provider.__init__(self)
 
+        self._service = service
 
 
     def authenticate(self, credentials):
         username = credentials['user']
         password = credentials['password']
 
-
         username, realm = self.get_real_username(username)
 
+        service = self._service
+        if service is None:
+           service = 'ldap'
+
         try:
-            if service is None:
-                service = 'ldap'
             return kerberos.checkPassword(username, password, service, realm)
         except kerberos.BasicAuthError as e:
             print(e)
