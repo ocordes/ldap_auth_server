@@ -291,6 +291,10 @@ class krb5_auth_provider(gss_realm_auth_provider):
 
         username, realm = self.get_real_username(username)
 
+
+        if not self._whitelist.whitelisted(username):
+            return False
+
         service = self._service
         if service is None:
            service = 'ldap'
