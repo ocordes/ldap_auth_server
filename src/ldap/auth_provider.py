@@ -2,7 +2,7 @@
 ldap/auth_provider.py
 
 written by: Oliver Cordes 2019-06-03
-changed by: Oliver Cordes 2019-06-03
+changed by: Oliver Cordes 2019-06-04
 
 """
 
@@ -14,6 +14,7 @@ base class for authentication providers
 
 from passlib.apache import HtpasswdFile    # htpasswd
 import pam                                 # PAM
+import kerberos                            # kerberos5
 
 import crypt, pwd
 from hmac import compare_digest as compare_hash
@@ -36,17 +37,11 @@ class auth_provider(object):
 
 
 """
-yes_auth_provider
+realm_auth_provider
 
-authenticate all users without checking
-
+basic class to split a LDAP username into some real
+usernam + real
 """
-
-class yes_auth_provider(auth_provider):
-    def authenticate(self, credentials):
-        return True
-
-
 class realm_auth_provider(auth_provider):
     def __init__(self, realm=None):
         auth_provider.__init__(self)
@@ -68,6 +63,44 @@ class realm_auth_provider(auth_provider):
             return name
         else:
             return m.group('word')
+
+
+"""
+gss_realm_auth_provider
+
+provides a seperation of the username into a real username and a realm
+"""
+class gss_realm_auth_provider(auth_provider):
+    def __init__(self):
+        auth_provider.__init__(self)
+
+        self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z]+),(?P<realm>.+)')
+
+
+    def get_real_username(self, name):
+        m = self._re.search(name)
+
+        if m is None:
+            username = name
+            realm = ''
+        else:
+            username = m.group('user')
+            realm = m.group('realm')
+
+        return username, realm
+
+
+"""
+yes_auth_provider
+
+authenticate all users without checking
+
+"""
+
+class yes_auth_provider(auth_provider):
+    def authenticate(self, credentials):
+        return True
+
 
 
 """
@@ -179,33 +212,24 @@ class pam_auth_provider(realm_auth_provider):
         return self._pam.authenticate(username, password, self._service)
 
 
-
 """
-pam_auth_provider
+sasl_auth_provider
 
-is a simple authentication provider for unix accounts via PAM
+is a simple authentication provider which uses sasl to authenticate
 """
-class sasl_auth_provider(auth_provider):
+class sasl_auth_provider(gss_realm_auth_provider):
     def __init__(self, binary, service='ldap'):
-        auth_provider.__init__(self)
-
-        self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z]+),(?P<realm>.+)')
+        gss_realm_auth_provider.__init__(self)
 
         self._binary = binary
 
 
     def call_saslauthd(self, user, password):
-        m = self._re.search(user)
-
-        if m is None:
-            username = user
-            realm = ''
-        else:
-            username = m.group('user')
-            realm = m.group('realm')
+        username, realm = self.get_real_username(user)
 
         print(username)
         print(realm)
+
 
         cmd = '{} -r {} -u {} -p {}'.format(self._binary, realm, username, password)
 
@@ -229,7 +253,37 @@ class sasl_auth_provider(auth_provider):
 
         result, msg = self.call_saslauthd(username, password)
 
-        #print(result)
-        #print(msg)
-
         return result == 'OK'
+
+
+"""
+krb5_auth_provider
+
+is a simple authentication provider which uses krb5 to authenticate,
+WARNING: the authentication mechanism works as follows, the library
+         tries to get a TGT from the KDC with the username and password via
+         kinit ! Nothing more is done! The library warns about KDC spoofing!
+"""
+class krb5_auth_provider(gss_realm_auth_provider):
+    def __init__(self, service=None):
+        gss_realm_auth_provider.__init__(self)
+
+
+
+    def authenticate(self, credentials):
+        username = credentials['user']
+        password = credentials['password']
+
+
+        username, realm = self.get_real_username(username)
+
+        try:
+            if service is None:
+                service = 'ldap'
+            return kerberos.checkPassword(username, password, service, realm)
+        except kerberos.BasicAuthError as e:
+            print(e)
+            return False
+        except:
+            print('Other Error')
+            return False

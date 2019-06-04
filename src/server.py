@@ -18,6 +18,7 @@ from pyasn1.codec.ber import encoder, decoder
 
 from ldap.auth_provider import htpasswd_auth_provider, \
                                 sasl_auth_provider, \
+                                krb5_auth_provider, \
                                 pam_auth_provider, \
                                 unix_auth_provider, \
                                 test_auth_provider, \
@@ -85,6 +86,15 @@ def create_auth_provider():
             print('SASL section not found!')
             binary = '/bin/ls'
         auth_provider = sasl_auth_provider(binary)
+
+    elif provider == 'KRB5':
+        print('Using krb5 authentication provider...')
+        if provider in config:
+            service = config[provider].get('service', None)
+        else:
+            print('KRB5 section not found!')
+            service = None
+        auth_provider = krb5_auth_provider(service)
     else:
         auth_provider = auth_provider
 
