@@ -120,8 +120,12 @@ class LDAP_Server(object):
 
             self._authenticated = self._auth_provider.authenticate(credentials)
             if self._authenticated:
+                if self._logger is not None:
+                    self._logger.write('User: {} is authenticated!'.format(self._name))
                 return 0, None
             else:
+                if self._logger is not None:
+                    self._logger.write('Authentication for user: {} failed!'.format(self._name))
                 return 49, 'invalid username/password settings'
 
 
