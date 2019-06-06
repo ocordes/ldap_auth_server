@@ -298,14 +298,14 @@ class Filter(univ.Choice):
     pass
 
 Filter.componentType = namedtype.NamedTypes(
-        namedtype.NamedType('and', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-        namedtype.NamedType('or', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.NamedType('and', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.NamedType('or', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))),
         namedtype.NamedType('not', Filter().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 2))),
         namedtype.NamedType('equalityMatch', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 3))),
         namedtype.NamedType('substrings', SubstringFilter().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 4))),
         namedtype.NamedType('greaterOrEqual', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 5))),
         namedtype.NamedType('lessOrEqual', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 6))),
-        namedtype.NamedType('present', AttributeDescription().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
+        namedtype.NamedType('present', AttributeDescription().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 7))),
         namedtype.NamedType('approxMatch', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 8))),
         namedtype.NamedType('extensibleMatch', MatchingRuleAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 9)))
     )
@@ -694,9 +694,60 @@ if __name__ == '__main__':
 
     data = b"0\x82\x02x\x02\x01\x02d\x82\x02q\x04,uid=omc,ou=People,dc=astro,dc=uni-bonn,dc=de0\x82\x02?0n\x04\x0bobjectClass1_\x04\x16inetLocalMailRecipient\x04\x0cposixAccount\x04\rinetOrgPerson\x04\x14organizationalPerson\x04\x06person\x04\nhostObject0\x19\x04\nloginShell1\x0b\x04\t/bin/bash0\x12\x04\tgidNumber1\x05\x04\x031000\x15\x04\x02cn1\x0f\x04\rOliver Cordes0\x0e\x04\x02sn1\x08\x04\x06Cordes0\x15\x04\tgivenName1\x08\x04\x06Oliver0\x1e\x04\x10mailLocalAddress1\n\x04\x08omcordes0\x18\x04\x0cemployeeType1\x08\x04\x06Intern0\x13\x04\tuidNumber1\x06\x04\x0419990'\x04\x04host1\x1f\x04\x07desktop\x04\x05ebhis\x04\x06portal\x04\x05theli0\x1d\x04\rhomeDirectory1\x0c\x04\n/users/omc08\x04\x0cuserPassword1(\x04&{SSHA}/W0okeqgj7NbCkymTDzm9FyO9IFSeEho00\x04\x04mail1(\x04\x15omc@astro.uni-bonn.de\x04\x0focordes@gmx.net0#\x04\x10departmentNumber1\x0f\x04\x01F\x04\x01M\x04\x01N\x04\x01R\x04\x01T0*\x04\x12mailRoutingAddress1\x14\x04\x12ocordes@freenet.de0\x0c\x04\x03uid1\x05\x04\x03omc0\x0c\x02\x01\x02e\x07\n\x01\x00\x04\x00\x04\x00"
 
-    debug.setLogger(debug.Debug('all'))
-    x, _ = decoder.decode(data, LDAPMessage())
-    print(x)
+
+    data = b'0>\x02\x01\x19c9\x04\x11dc=UNI-BONN,dc=DE\n\x01\x02\n\x01\x00\x02\x02\x03\xe8\x02\x01\x00\x01\x01\x00\xa0\x12\x87\x0bobjectClass\x87\x03uid0\x00'
+
+    #debug.setLogger(debug.Debug('all'))
+    #x, _ = decoder.decode(data, LDAPMessage())
+    #x, _ = decoder.decode(data)
+    #print(x)
+
+    print('Hallo')
+    #filter2 = Filter(tagSet=[tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)])
+    #filter = Filter(tagSet=[tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7)])
+
+    filter = Filter()
+    filter['present'] = 'objectClass'
+
+    print('Berta')
+
+    #filter['and'] = filter2
+
+
+
+    #namedtype.NamedType('and', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+    #namedtype.NamedType('or', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+    #namedtype.NamedType('not', Filter().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 2))),
+    #namedtype.NamedType('equalityMatch', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 3))),
+    #namedtype.NamedType('substrings', SubstringFilter().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 4))),
+    #namedtype.NamedType('greaterOrEqual', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 5))),
+    #namedtype.NamedType('lessOrEqual', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 6))),
+    #namedtype.NamedType('present', AttributeDescription().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
+    #namedtype.NamedType('approxMatch', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 8))),
+    #namedtype.NamedType('extensibleMatch', MatchingRuleAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 9)))
+
+    searchrequest = SearchRequest()
+    searchrequest['baseObject'] = 'dc=UNI-BONN,dc=DE'
+    searchrequest['scope'] = 'wholeSubtree'
+    searchrequest['derefAliases'] = 'neverDerefAliases'
+    searchrequest['sizeLimit'] = 1000
+    searchrequest['timeLimit'] = 0
+    searchrequest['typesOnly'] = False
+    #searchrequest['attributes'] = None
+    searchrequest['filter'] = filter
+
+    ldapmessage = LDAPMessage()
+    ldapmessage['messageID'] = 25
+    ldapmessage['protocolOp'] = searchrequest
+    lm = encoder.encode(ldapmessage)
+
+
+    print(data)
+    print(' '.join([str(i) for i in data]))
+    print(lm)
+    print(' '.join([str(i) for i in lm]))
+
+
     sys.exit(0)
 
     #print(d)
