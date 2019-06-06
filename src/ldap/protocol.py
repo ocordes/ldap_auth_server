@@ -706,8 +706,11 @@ if __name__ == '__main__':
     #filter2 = Filter(tagSet=[tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)])
     #filter = Filter(tagSet=[tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7)])
 
+    filter2 = Filter()
+    filter2['present'] = 'objectClass'
+
     filter = Filter()
-    filter['present'] = 'objectClass'
+    filter['and'] = [ filter2 ]
 
     print('Berta')
 
