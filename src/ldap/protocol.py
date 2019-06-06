@@ -796,7 +796,9 @@ if __name__ == '__main__':
     debug.setLogger(debug.Debug('all'))
     #x, _ = decoder.decode(lm, LDAPMessage())
     #decoder.decode.defaultErrorState = decoder.stDumpRawValue
-    x, _ = decoder.decode(lm2, Filter())
+    x, _ = decoder.decode(lm2, asn1spec=Filter())
+
+    #print(filter.prettyPrint())
 
     print(x)
 
