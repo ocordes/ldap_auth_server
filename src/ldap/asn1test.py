@@ -1,16 +1,7 @@
 
 import os, sys
 
-# Imports from pyasn1
-from pyasn1.type import tag, namedtype, namedval, univ, constraint
-from pyasn1.codec.ber import encoder, decoder
-#from pyasn1.codec.der import encoder, decoder
-
-
-from pyasn1 import debug
-#debug.setLogger(debug.Debug('all'))
-
-
+from asn1_coding import Decoder
 from rfc4511 import *
 
 
@@ -23,10 +14,20 @@ if __name__ == '__main__':
     print(' '.join([str(i) for i in data]))
 
 
-    filter1 = Filter()
-    filter1['present'] = 'uid'
-    filter2 = Filter()
-    filter2['present'] = 'objectClass'
+    lm = LDAPMessage()
+
+
+    decoder = Decoder()
+
+    x, sub = decoder.decode(data, schema=LDAPMessage())
+
+    print(x.prettyPrint())
+
+    #
+    # filter1 = Filter()
+    # filter1['present'] = 'uid'
+    # filter2 = Filter()
+    # filter2['present'] = 'objectClass'
 
     # afilter = Filter()
     # #afilter['and'].extend([filter1])
@@ -35,27 +36,16 @@ if __name__ == '__main__':
     # Aand = And()
     # Aand.setComponentByPosition(0, filter1)
     # afilter['and'] = Aand
-    #
-    # searchrequest = SearchRequest()
-    # searchrequest['baseObject'] = 'dc=UNI-BONN,dc=DE'
-    # searchrequest['scope'] = 'wholeSubtree'
-    # searchrequest['derefAliases'] = 'neverDerefAliases'
-    # searchrequest['sizeLimit'] = 1000
-    # searchrequest['timeLimit'] = 0
-    # searchrequest['typesOnly'] = False
-    # #searchrequest['filter'] = afilter
-    # searchrequest['filter'] = afilter
-    #
-    # lm = encoder.encode(searchrequest)
+
     #
     # print(lm)
     # print(' '.join(['%i' % i for i in lm]))
     # print(' '.join(['%x' % i for i in lm]))
 
-    debug.setLogger(debug.Debug('all'))
-    #x, sub = decoder.decode(data, asn1spec=SearchRequest())
-    x, sub = decoder.decode(data, SearchRequest())
 
-    print('Output')
-    print(x.prettyPrint())
-    print(sub)
+    #x, sub = decoder.decode(data, asn1spec=SearchRequest())
+    #x, sub = decoder.decode(data, SearchRequest())
+
+    #print('Output')
+    #print(x.prettyPrint())
+    #print(sub)

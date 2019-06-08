@@ -320,9 +320,9 @@ class presentFilter(AttributeDescription):
 
 
 Filter.componentType = namedtype.NamedTypes(
-    #namedtype.NamedType('and', andFilter()),
+    namedtype.NamedType('and', andFilter()),
     #namedtype.NamedType('and', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-    namedtype.NamedType('and', univ.SetOf(componentType=Filter()).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+    #namedtype.NamedType('and', univ.SetOf(componentType=Filter()).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
     namedtype.NamedType('or', univ.SetOf(componentType=namedtype.NamedType('filter', Filter())).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)).subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
     #namedtype.NamedType('not', Filter().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 2))),
     namedtype.NamedType('not', notFilter()),
@@ -330,8 +330,8 @@ Filter.componentType = namedtype.NamedTypes(
     namedtype.NamedType('substrings', SubstringFilter().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 4))),
     namedtype.NamedType('greaterOrEqual', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 5))),
     namedtype.NamedType('lessOrEqual', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 6))),
-    #namedtype.NamedType('present', AttributeDescription().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
-    namedtype.NamedType('present', AttributeDescription()),
+    namedtype.NamedType('present', AttributeDescription().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
+    #namedtype.NamedType('present', AttributeDescription()),
     namedtype.NamedType('approxMatch', AttributeValueAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 8))),
     namedtype.NamedType('extensibleMatch', MatchingRuleAssertion().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 9)))
     )
@@ -782,25 +782,26 @@ if __name__ == '__main__':
     ldapmessage['messageID'] = 25
     ldapmessage['protocolOp'] = searchrequest
     lm = encoder.encode(ldapmessage)
-    lm2 = encoder.encode(filter)
+    #lm2 = encoder.encode(filter)
 
 
     print(data)
     print(' '.join([str(i) for i in data]))
-    print(lm2)
-    print(' '.join(['%i' % i for i in lm2]))
-    print(' '.join(['%x' % i for i in lm2]))
+    print(lm)
+    print(' '.join(['%i' % i for i in lm]))
+    print(' '.join(['%x' % i for i in lm]))
 
     print('success:', data == lm)
 
     debug.setLogger(debug.Debug('all'))
-    #x, _ = decoder.decode(lm, LDAPMessage())
+    x, _ = decoder.decode(lm, asn1spec=LDAPMessage())
     #decoder.decode.defaultErrorState = decoder.stDumpRawValue
-    x, _ = decoder.decode(lm2, asn1spec=Filter())
+    #x, _ = decoder.decode(lm2, asn1spec=Filter())
 
     #print(filter.prettyPrint())
 
-    print(x)
+    print('Output')
+    print(x.prettyPrint())
 
     sys.exit(0)
 
