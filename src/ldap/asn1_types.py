@@ -12,6 +12,8 @@ from asn1_tags import Tag, tagClassUniversal, tagClassApplication, \
                             tagFormatSimple, tagFormatConstructed
 
 
+from asn1_debug import *
+
 """
 all based on this arcticle:
 
@@ -40,24 +42,34 @@ class NamedValues(object):
     def __init__(self, *args):
         self._namedtypes = tuple(args)
 
-        print(self._namedtypes)
+        #debug(self._namedtypes)
 
 
     def getobjfromtag(self, tag):
+        #debug('NamedValues.getobjfromtag:', tag)
+        #debug('  len', len(self._namedtypes))
         for i in self._namedtypes:
-            print(tag,i._schema.tag)
             if tag == i._schema.tag:
                 return i._schema
-
         return None
 
 
     def __getitem__(self, ind):
-        print('getitem', ind, len(self._namedtypes))
+        #debug('getitem', ind, len(self._namedtypes))
         if ind >= len(self._namedtypes):
             return None
         else:
             return self._namedtypes[ind]._schema
+
+
+    def getid(self, name):
+        nr = 0
+        for i in self._namedtypes:
+            if i._name == name:
+                return nr
+            nr += 1
+
+        return -1
 
 
 class NamedType(object):
@@ -118,6 +130,8 @@ class asn1base(object):
 
 
     def getobjfromtag(self, tag):
+        #debug('getobjfromtag: ', tag)
+        #debug('namedValues', self.namedValues)
         if self.namedValues is None:
             raise ValueError('namedValues are not set for \'{}\''.format(self.__class__))
         return self.namedValues.getobjfromtag(tag)
@@ -125,9 +139,9 @@ class asn1base(object):
 
     @staticmethod
     def split_decode(substrate):
-        print('Tag coded:', substrate[0])
+        #print('Tag coded:', substrate[0])
         tag = Tag.decode(substrate[0])
-        print('Tag decoded:', tag)
+        #print('Tag decoded:', tag)
         l1 = substrate[1]
         payload_start = 2
 
@@ -165,33 +179,42 @@ class asn1base(object):
 
     @staticmethod
     def decode(substrate, schema=None):
+        if schema is not None:
+            debug('decode called with schema', schema.__class__.__name__)
+        debug('substrate =', octed2string(substrate))
 
-        print('decode: schema=',schema)
-        print(' '.join(['%i' % i for i in substrate]))
         substrate, tag, payload = asn1base.split_decode(substrate)
-        print(' '.join(['%i' % i for i in substrate]))
-        print(' '.join(['%i' % i for i in payload]))
-        print(tag)
+
+        debug('remaining substrate =', octed2string(substrate))
+        debug('payload =', octed2string(payload))
+        debug('tag =', tag )
 
         if schema is None:
             obj_type = asn1base.objfromtag(tag)
             obj = obj_type(tag)
         else:
+            #obj_schema = schema()
+            #if isinstance(obj_schema, Choice):
             if isinstance(schema, Choice):
-                print(schema.__class__)
+                debug('decode: choice object detected')
+                #obj = obj_schema.getobjfromtag(tag)
                 obj = schema.getobjfromtag(tag)
                 if obj is None:
                     raise TypeError('Decoded {} is not in \'{}\''.format(tag, schema.__class__))
             else:
                 if tag == schema.tag:
                     obj = schema
+                #if tag == obj_schema.tag:
+                #    obj = obj_schema
                 else:
                     raise TypeError('Decoded {} is not {} in schema!'.format(tag, schema.tag))
 
+        debug('object detected: ', obj.__class__.__name__)
+
         obj.update_payload(payload)
+        debug(' value =', obj)
 
-        print(obj.__class__)
-
+        debug('decode done.')
         return obj, substrate
 
 
@@ -201,6 +224,10 @@ class Boolean(asn1base):
     def update_payload(self, payload):
         asn1base.update_payload(self, payload)
         self._value = payload[0] != 0
+
+
+    def __str__(self):
+        return str(self._value)
 
 
     def prettyPrint(self, indent=0):
@@ -222,6 +249,10 @@ class Integer(asn1base):
         self._value = val
 
 
+    def __str__(self):
+        return str(self._value)
+
+
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
                                             self.__class__.__name__,
@@ -235,6 +266,10 @@ class OctetString(asn1base):
     def update_payload(self, payload):
         asn1base.update_payload(self, payload)
         self._value = payload.decode('utf-8')
+
+
+    def __str__(self):
+        return '\'{}\''.format(self._value)
 
 
     def prettyPrint(self, indent=0):
@@ -262,6 +297,10 @@ class Enumerated(asn1base):
             return self.valuemap.get(self._value)
 
 
+    def __str__(self):
+        return 'Enumerated({}=={})'.format(self._value, self._valuetoname())
+
+
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
                                         self.__class__.__name__,
@@ -279,17 +318,29 @@ class Sequence(asn1base):
         self._values = []
 
         # extract the next objects
-        print('update_payload sequence')
+        debug('update_paylaod: sequence')
 
         ind = 0
-        while len(payload) > 9:
-            print(payload)
+        while len(payload) > 0:
             schema = self.namedValues[ind]
             obj, payload = asn1base.decode(payload, schema)
-            print('rest=', payload)
             self._values.append(obj)
             ind += 1
-        print('Done.')
+        debug('update_payload_done: sequence')
+
+
+    def __getitem__(self, val):
+        if isinstance(val, int):
+            return self._values[val]
+        else:
+            id = self.namedValues.getid(val)
+            if id == -1:
+                raise AttributeError('\'{}\' is not in Sequence'.format(val))
+            return self._values[id]
+
+
+    def __str__(self):
+        return 'Sequence({} entries)'.format(len(self._values))
 
 
     def prettyPrint(self, indent=0):
@@ -302,6 +353,7 @@ class Sequence(asn1base):
 
 class Set(asn1base):
     tag = Tag(0, tagFormatConstructed, 17)
+    components = None
 
     def update_payload(self, payload):
         asn1base.update_payload(self, payload)
@@ -309,17 +361,18 @@ class Set(asn1base):
         self._values = []
 
         # extract the next objects
-        print('update_payload set')
+        debug('update_payload: set')
 
         ind = 0
-        while len(payload) > 9:
-            print(payload)
-            schema = self.namedValues[ind]
-            obj, payload = asn1base.decode(payload, schema)
-            print('rest=', payload)
+        while len(payload) > 0:
+            obj, payload = asn1base.decode(payload, self.components)
             self._values.append(obj)
             ind += 1
-        print('Done.')
+        debug('update_payload_done: set')
+
+
+    def __str__(self):
+        return 'Set({} entries)'.format(len(self._values))
 
 
     def prettyPrint(self, indent=0):
@@ -328,7 +381,7 @@ class Set(asn1base):
             subitems += i.prettyPrint(indent+1)
         return '{}{}:\n{}'.format(SPACES*indent, self.__class__.__name__, subitems)
 
-        
+
 
 class Choice(asn1base):
     tag = None

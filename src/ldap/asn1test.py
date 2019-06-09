@@ -4,6 +4,8 @@ import os, sys
 from asn1_coding import Decoder
 from rfc4511 import *
 
+from asn1_debug import *
+
 
 if __name__ == '__main__':
     print('Testings')
@@ -19,9 +21,14 @@ if __name__ == '__main__':
 
     decoder = Decoder()
 
+    debug_on()
     x, sub = decoder.decode(data, schema=LDAPMessage())
 
     print(x.prettyPrint())
+
+
+    print(x['messageID'])
+    print(x['protocolOp'])
 
     #
     # filter1 = Filter()

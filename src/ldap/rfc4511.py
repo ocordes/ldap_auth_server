@@ -39,12 +39,10 @@ class Scope(Enumerated):
 
 
 class DerefAliases(Enumerated):
-    namedValues = NamedValues(
-                    NamedType('neverDerefAliases', 0),
-                    NamedType('derefInSearching', 1),
-                    NamedType('derefFindingBaseObj', 2),
-                    NamedType('derefAlways', 3)
-    )
+    valuemap = ValueMap(('neverDerefAliases', 0),
+                        ('derefInSearching', 1),
+                        ('derefFindingBaseObj', 2),
+                        ('derefAlways', 3))
 
 
 class SizeLimit(Integer):
@@ -65,19 +63,21 @@ class Filter(Choice):
 
 class AndFilter(Set):
     tag = Tag(tagClassContext, tagFormatConstructed, 0)
+    components = Filter()
 
 
 
 
 class PresentFilter(AttributeDescription):
-    
-    pass
+    tag = Tag(tagClassContext, tagFormatSimple, 7)
+
 
 
 Filter.namedValues = NamedValues(
     NamedType('and', AndFilter()),
     NamedType('present', PresentFilter()),
 )
+
 
 class SearchRequest(Sequence):
     tag = Tag(tagClassApplication, tagFormatConstructed, 3)
