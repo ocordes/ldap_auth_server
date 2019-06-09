@@ -28,8 +28,14 @@ if __name__ == '__main__':
 
 
     print(x['messageID'])
-    print(x['protocolOp'])
+    op_x = x['protocolOp']
+    print(op_x)
+    print(op_x.getName())
+    print(op_x['baseObject'])
 
+    filter = op_x['filter']
+    print(filter.__class__)
+    print(filter.get_value())
     #
     # filter1 = Filter()
     # filter1['present'] = 'uid'

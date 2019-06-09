@@ -63,7 +63,7 @@ class Filter(Choice):
 
 class AndFilter(Set):
     tag = Tag(tagClassContext, tagFormatConstructed, 0)
-    components = Filter()
+    components = NamedType('filter', Filter())
 
 
 
