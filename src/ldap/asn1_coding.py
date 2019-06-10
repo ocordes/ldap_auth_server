@@ -13,7 +13,7 @@ all based on this arcticle:
 https://en.wikipedia.org/wiki/X.690
 """
 
-from asn1_types import asn1base
+from ldap.asn1_types import asn1base
 
 
 """

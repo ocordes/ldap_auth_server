@@ -10,9 +10,9 @@ import threading
 
 
 # Imports from pyasn1
-from pyasn1.type import tag, namedtype, namedval, univ, constraint
+#from pyasn1.type import tag, namedtype, namedval, univ, constraint
 
-from ldap.protocol import *
+from ldap.rfc4511 import *
 from ldap.ldap_objects import LDAP_Server
 from pyasn1.codec.ber import encoder, decoder
 
@@ -115,7 +115,7 @@ def create_auth_provider():
 # thread fuction
 
 def threaded(connection, auth_provider):
-    ldap_server = LDAP_Server(connection, auth_provider, logger=logger)
+    ldap_server = LDAP_Server(connection, auth_provider, logger=logger, debug=True)
 
     ldap_server.run()
     print_lock.release()

@@ -9,12 +9,12 @@ changed by: Oliver Cordes 2019-06-10
 
 import copy
 
-from asn1_tags import Tag, tagClassUniversal, tagClassApplication, \
+from ldap.asn1_tags import Tag, tagClassUniversal, tagClassApplication, \
                             tagClassContext, tagClassPrivate, \
                             tagFormatSimple, tagFormatConstructed
 
 
-from asn1_debug import *
+from ldap.asn1_debug import *
 
 """
 all based on this arcticle:

@@ -7,9 +7,9 @@ changed by: Oliver Cordes 2019-05-28
 
 """
 
-from pyasn1.codec.ber import encoder, decoder
+from ldap.asn1_coding import encode, decode
 
-from ldap.protocol import *
+from ldap.rfc4511 import *
 
 from ldap.auth_provider import htpasswd_auth_provider
 
@@ -23,10 +23,10 @@ class LDAP_Object(object):
 
 
     def send(self, connection, newdata):
-        data = encoder.encode(newdata)
+        data = encode(newdata)
         if (self._logger is not None) and self._debug:
             self._logger.write('-->', data)
-        x, _ = decoder.decode(data, LDAPMessage())
+        x, _ = decode(data, LDAPMessage())
         if (self._logger is not None) and self._debug:
             self._logger.write(x)
         connection.send(data)
@@ -140,7 +140,7 @@ class LDAP_Server(object):
 
         if data['authentication'].getName() == 'simple':
             self._auth_type = 0
-            self._credentials = str(data['authentication']['simple'])
+            self._credentials = str(data['authentication'])
         else:
             self._auth_type = 1
             x = data['authentication']['sasl']
@@ -178,7 +178,7 @@ class LDAP_Server(object):
     def handle_message(self, data):
         #debug.setLogger(debug.Debug('all'))
         try:
-            x, _ = decoder.decode(data, LDAPMessage())
+            x, _ = decode(data, LDAPMessage())
             if (self._logger is not None) and self._debug:
                 self._logger.write(x)
             self._msgid = x['messageID']
@@ -193,11 +193,11 @@ class LDAP_Server(object):
             if (self._logger is not None) and self._debug:
                 self._logger.write('LDAPMessage ->', op)
             if op == 'bindRequest':
-                self.BindRequest(op_x.getComponent())
+                self.BindRequest(op_x)
             elif op == 'unbindRequest':
-                self.UnbindRequest(op_x.getComponent())
+                self.UnbindRequest(op_x)
             elif op == 'searchRequest':
-                self.SearchRequest(op_x.getComponent())
+                self.SearchRequest(op_x)
 
 
 

@@ -6,10 +6,10 @@ changed by: Oliver Cordes 2019-06-08
 
 """
 
-from asn1_tags import Tag, tagClassUniversal, tagClassApplication, \
+from ldap.asn1_tags import Tag, tagClassUniversal, tagClassApplication, \
                             tagClassContext, tagClassPrivate, \
                             tagFormatSimple, tagFormatConstructed
-from asn1_types import *
+from ldap.asn1_types import *
 
 
 class LDAPString(OctetString):
