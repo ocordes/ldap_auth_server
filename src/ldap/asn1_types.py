@@ -3,7 +3,7 @@
 ldap/asn1_types.py
 
 writtem by: Oliver Cordes 2019-06-08
-changed by: Oliver Cordes 2019-06-08
+changed by: Oliver Cordes 2019-06-10
 
 """
 
@@ -37,6 +37,18 @@ def bytes2integer(s):
         base *= 256
 
     return integer
+
+
+def lengthtobytes(length):
+    bstr = length.to_bytes(30, 'big').lstrip(b'\x00')
+    if len(bstr) == 1:
+        return bstr
+    elif len(bstr) == 0:
+        return b'\x00'
+    else:
+        lengthid = (128 + len(bstr)).to_bytes(1, 'big')
+        return lengthid + bstr
+
 
 #------------------------------------------------------------------------------
 
@@ -113,8 +125,12 @@ class ValueMap(object):
         self._revmap.update(values)
 
 
-    def get(self, name):
-        return self._revmap.get(name, name)
+    def getname(self, id):
+        return self._revmap.get(id, id)
+
+
+    def getid(self, name):
+        return self._map.get(name, name)
 
 
 #-----------------------------------------------------------------------------
@@ -133,6 +149,7 @@ class asn1base(object):
 
         self._schema = schema
         self._name = None
+        self._value = None
 
 
     def setName(self, name):
@@ -152,7 +169,7 @@ class asn1base(object):
 
 
     def set_value(self, value):
-        pass
+        raise NotImplementedError
 
 
     def update_payload(self, payload):
@@ -207,7 +224,7 @@ class asn1base(object):
     """
     @staticmethod
     def objfromtag(tag):
-        l = [Boolean, Integer, OctetString, Enumerated, Sequence, Set]
+        l = [Null, Boolean, Integer, OctetString, Enumerated, Sequence, Set, SequenceOf, Choice, ]
 
         for i in l:
             if tag == i.tag:
@@ -246,6 +263,7 @@ class asn1base(object):
                 schema.set_value(obj)
                 schema.setName(name)
                 obj = schema
+                debug('is_choice:', obj.__class__)
             else:
                 if tag == schema.tag:
                     obj = copy.copy(schema)
@@ -260,6 +278,40 @@ class asn1base(object):
 
         debug('decode done.')
         return obj, substrate
+
+
+    def encodepayload(self, payload):
+        length = lengthtobytes(len(payload))
+        return self.tag.encode2byte() + length + payload
+
+
+    def encode(self):
+        raise NotImplementedError
+
+
+
+class Null(asn1base):
+    tag = Tag(0, 0, 5)
+
+    def __str__(self):
+        return 'Null'
+
+
+    def get_value(self):
+        return None
+
+
+    def set_value(self, value):
+        pass
+
+
+    def prettyPrint(self, indent=0):
+        return '{}{}:\n{}{}\n'.format(SPACES*indent,
+                                        self.getName(),
+                                        SPACES*(indent+1), 'Null')
+
+    def encode(self):
+        return self.encodepayload(b'')
 
 
 
@@ -288,6 +340,9 @@ class Boolean(asn1base):
                                             self.getName(),
                                             SPACES*(indent+1), self._value)
 
+    def encode(self):
+        return self.encodepayload(int(self._value).to_bytes(1, 'big'))
+
 
 
 class Integer(asn1base):
@@ -311,7 +366,9 @@ class Integer(asn1base):
 
 
     def set_value(self, value):
+        debug('intger.set_value({}) {}'.format(value, value.__class__))
         self._value = value
+
 
 
     def prettyPrint(self, indent=0):
@@ -319,6 +376,14 @@ class Integer(asn1base):
                                             self.getName(),
                                             SPACES*(indent+1), self._value)
 
+
+    def encode(self):
+        if self._value == 0:
+            bstr = b'\x00'
+        else:
+            bstr = self._value.to_bytes(10, 'big').lstrip(b'\x00')
+
+        return self.encodepayload(bstr)
 
 
 
@@ -347,6 +412,9 @@ class OctetString(asn1base):
                                         self.getName(),
                                         SPACES*(indent+1), self._value)
 
+    def encode(self):
+        return self.encodepayload(bytearray(self._value, 'utf-8'))
+
 
 
 class Enumerated(asn1base):
@@ -364,7 +432,7 @@ class Enumerated(asn1base):
         if self.valuemap is None:
             return self._value
         else:
-            return self.valuemap.get(self._value)
+            return self.valuemap.getname(self._value)
 
 
     def __str__(self):
@@ -376,13 +444,23 @@ class Enumerated(asn1base):
 
 
     def set_value(self, value):
-        self._value = value
+        if isinstance(value, int):
+            self._value = value
+        elif isinstance(value, str):
+            if self.valuemap is None:
+                raise ValueError('Cannot map strings to int without valuemap!')
+            self._value = self.valuemap.getid(value)
 
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
                                         self.getName(),
                                         SPACES*(indent+1), self._valuetoname())
+
+
+    def encode(self):
+        return self.encodepayload(int(self._value).to_bytes(1, 'big'))
+
 
 
 class SequenceAndSet(asn1base):
@@ -394,20 +472,35 @@ class SequenceAndSet(asn1base):
             if id == -1:
                 raise AttributeError('\'{}\' is not in Sequence'.format(val))
 
-        obj = self._values[id]
-        if isinstance(obj, Choice):
-            return obj._value
-        else:
-            return obj.get_value()
+        obj = self._value[id]
+        debug('__getitem__=', obj.__class__)
+
+        return obj.get_value()
+
+        #if isinstance(obj, Choice):
+        #    return obj
+        #else:
+        #    return obj.get_value()
 
 
     def prettyPrint(self, indent=0):
+        if self._value is None:
+            raise ValueError('{} is not initialised'.format(self.__class__.__name__))
         subitems = ''
-        for i in self._values:
-            subitems += i.prettyPrint(indent+1)
+        for i in self._value:
+            if i is not None:
+                subitems += i.prettyPrint(indent+1)
         return '{}{}:\n{}'.format(SPACES*indent,
                                     self.getName(),
                                     subitems)
+
+
+    def encode(self):
+        subitems = b''
+        for i in self._value:
+            if i is not None:
+                subitems += i.encode()
+        return self.encodepayload(subitems)
 
 
 
@@ -415,26 +508,56 @@ class Sequence(SequenceAndSet):
     tag = Tag(0, tagFormatConstructed, 16)
 
 
+    def _initvalues(self, empty=False):
+        if self._value is None:
+            # create the list of possible entries
+            self._value = []
+            for i in self.namedValues._namedtypes:
+                if i._optional or empty:
+                    obj = None
+                else:
+                    obj = copy.copy(i._schema)
+                    obj.setName(i._name)
+                self._value.append(obj)
+
+
     def update_payload(self, payload):
         asn1base.update_payload(self, payload)
 
-        self._values = []
+        self._initvalues(empty=True)
 
         # extract the next objects
         debug('update_paylaod: sequence')
 
-        ind = 0
+        id = 0
         while len(payload) > 0:
-            schema = self.namedValues[ind]
-            obj, payload = asn1base.decode(payload, schema, self.namedValues.getname(ind))
-            self._values.append(obj)
-            ind += 1
+            schema = self.namedValues[id]
+            obj, payload = asn1base.decode(payload, schema, self.namedValues.getname(id))
+            self._value[id] = obj
+            debug('add sequcence: obj=', obj.__class__)
+            id += 1
         debug('update_payload_done: sequence')
 
 
 
+    def __setitem__(self, ind, val):
+        debug('sequence[{}] = {}'.format(ind,val))
+        self._initvalues()
+        # sets now the value
+        id = self.namedValues.getid(ind)
+        if id == -1:
+            raise AttributeError('{} is not in namedtype definitions!'.format(ind))
+        if self._value[id] is None:
+            # optional entry
+            self._value[id] = copy.copy(self.namedValue[id])
+            self._value[id].setName(self.namedValue.getname(id))
+        # finally sets the value!
+        self._value[id].set_value(val)
+        debug('squence[] done')
+
+
     def __str__(self):
-        return 'Sequence({} entries)'.format(len(self._values))
+        return 'Sequence({} entries)'.format(len(self._value))
 
 
 
@@ -445,7 +568,7 @@ class Set(SequenceAndSet):
     def update_payload(self, payload):
         asn1base.update_payload(self, payload)
 
-        self._values = []
+        self._value = []
 
         # extract the next objects
         debug('update_payload: set')
@@ -453,19 +576,37 @@ class Set(SequenceAndSet):
         ind = 0
         while len(payload) > 0:
             obj, payload = asn1base.decode(payload, self.components._schema, self.components._name)
-            self._values.append(obj)
+            self._value.append(obj)
             #debug('set update_payload: ' , obj.prettyPrint())
+            debug('add set: obj=', obj.__class__)
             ind += 1
         debug('update_payload_done: set')
 
 
     def __str__(self):
-        return 'Set({} entries)'.format(len(self._values))
+        return 'Set({} entries)'.format(len(self._value))
 
 
     def get_value(self):
-        return [i.get_value() for i in self._values]
+        return [i.get_value() for i in self._value]
 
+
+    def set_value(self, val):
+        if isinstance(val, (list,tuple)):
+            if self._value is None:
+                self._value = []
+            for i in val:
+                self._value.append(i)
+        else:
+            if val is None:
+                self._value = []
+            else:
+                raise AttributeError('Set needs a list or tuple with values!')
+
+
+
+class SequenceOf(Set):
+    tag = Tag(0, tagFormatConstructed, 16)
 
 
 class Choice(asn1base):
@@ -476,8 +617,9 @@ class Choice(asn1base):
         self._value = val
 
 
-    #def get_value(self):
-    #    return self._value.get_value()
+    def get_value(self):
+        #return self._value.get_value()
+        return self._value
 
 
     def update_payload(self, payload):
@@ -490,8 +632,26 @@ class Choice(asn1base):
                                     self._value.prettyPrint(indent=indent+1))
 
 
+    def __setitem__(self, ind, val):
+        # get the schema
+        debug('choice[{}] = {}'.format(ind,val))
+        id = self.namedValues.getid(ind)
+        if id == -1:
+            raise AttributeError('{} is not in namedtype definitions!'.format(ind))
+        obj = copy.copy(self.namedValues[id])
+        name = self.namedValues.getname(id)
+        obj.setName(name)
+        obj.set_value(val)
+        self._value = obj
+        debug('choice[] done')
+
+
     def __str__(self):
         return 'Choice({})'.format(self._value.getName())
+
+
+    def encode(self):
+        return self._value.encode()
 
 
 

@@ -3,7 +3,7 @@
 ldap/asn1_tags.py
 
 writtem by: Oliver Cordes 2019-06-08
-changed by: Oliver Cordes 2019-06-08
+changed by: Oliver Cordes 2019-06-10
 
 """
 
@@ -54,6 +54,10 @@ class Tag(object):
         tagId = substrate_byte & 31
 
         return Tag(tagClass, tagFormat, tagId)
+
+
+    def encode2byte(self):
+        return bytes([self.encode()])
 
 
 
