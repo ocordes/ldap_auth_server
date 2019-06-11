@@ -164,6 +164,11 @@ class asn1base(object):
             return self._name
 
 
+    def getTreeName(self):
+        # use definetly the original one
+        return asn1base.getName(self)
+
+
     def get_value(self):
         return self.__str__()
 
@@ -307,7 +312,7 @@ class Null(asn1base):
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
-                                        self.getName(),
+                                        self.getTreeName(),
                                         SPACES*(indent+1), 'Null')
 
     def encode(self):
@@ -337,7 +342,7 @@ class Boolean(asn1base):
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
-                                            self.getName(),
+                                            self.getTreeName(),
                                             SPACES*(indent+1), self._value)
 
     def encode(self):
@@ -373,7 +378,7 @@ class Integer(asn1base):
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
-                                            self.getName(),
+                                            self.getTreeName(),
                                             SPACES*(indent+1), self._value)
 
 
@@ -409,7 +414,7 @@ class OctetString(asn1base):
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
-                                        self.getName(),
+                                        self.getTreeName(),
                                         SPACES*(indent+1), self._value)
 
     def encode(self):
@@ -454,7 +459,7 @@ class Enumerated(asn1base):
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}{}\n'.format(SPACES*indent,
-                                        self.getName(),
+                                        self.getTreeName(),
                                         SPACES*(indent+1), self._valuetoname())
 
 
@@ -491,7 +496,7 @@ class SequenceAndSet(asn1base):
             if i is not None:
                 subitems += i.prettyPrint(indent+1)
         return '{}{}:\n{}'.format(SPACES*indent,
-                                    self.getName(),
+                                    self.getTreeName(),
                                     subitems)
 
 
@@ -565,6 +570,7 @@ class Set(SequenceAndSet):
     tag = Tag(0, tagFormatConstructed, 17)
     components = None
 
+
     def update_payload(self, payload):
         asn1base.update_payload(self, payload)
 
@@ -613,13 +619,20 @@ class Choice(asn1base):
     tag = None
 
 
+    def getName(self):
+        debug('Choice.getName =', self._value.getName())
+        return self._value.getName()
+
+
     def set_value(self, val):
         self._value = val
 
 
     def get_value(self):
         #return self._value.get_value()
-        return self._value
+        debug('Choice.get_value()')
+        return self
+        #return self._value
 
 
     def update_payload(self, payload):
@@ -628,7 +641,7 @@ class Choice(asn1base):
 
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}'.format(SPACES*indent,
-                                    self.getName(),
+                                    self.getTreeName(),
                                     self._value.prettyPrint(indent=indent+1))
 
 
@@ -645,6 +658,20 @@ class Choice(asn1base):
         self._value = obj
         debug('choice[] done')
 
+
+    def __getitem__(self, ind):
+        debug('Choice[{}] start'.format(ind))
+        if isinstance(ind, str):
+            if ind == self._value.getName():
+                debug('Choice[] value=', self._value)
+                if isinstance(self._value, (Boolean, Integer, OctetString, Enumerated)):
+                    return self._value.get_value()
+                else:
+                    return self._value
+            else:
+                raise AttributeError('{} is not equal with the choosen type!'.format(ind))
+        else:
+            raise TypeError('type of ind is not supported for choice[]')
 
     def __str__(self):
         return 'Choice({})'.format(self._value.getName())

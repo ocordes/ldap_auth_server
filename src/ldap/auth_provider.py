@@ -137,10 +137,7 @@ class test_auth_provider(realm_auth_provider):
         username = credentials['user']
         password = credentials['password']
 
-        print(username)
         username = self.get_real_username(username)
-        print(username)
-        print(password)
 
         if self._whitelist.whitelisted(username):
             # accept by whitelist

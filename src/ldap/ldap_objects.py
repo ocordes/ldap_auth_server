@@ -10,6 +10,7 @@ changed by: Oliver Cordes 2019-05-28
 from ldap.asn1_coding import encode, decode
 
 from ldap.rfc4511 import *
+from ldap.asn1_debug import *
 
 from ldap.auth_provider import htpasswd_auth_provider
 
@@ -111,6 +112,9 @@ class LDAP_Server(object):
         # authentification provider
         self._auth_provider = auth_provider
 
+        if self._debug:
+            debug_on()
+
     # do the authentification
     def _check_authentication(self):
         if self._credentials == '':
@@ -140,8 +144,7 @@ class LDAP_Server(object):
 
         if data['authentication'].getName() == 'simple':
             self._auth_type = 0
-            print(data['authentication'].__class__)
-            self._credentials = str(data['authentication'])
+            self._credentials = str(data['authentication']['simple'])
         else:
             self._auth_type = 1
             x = data['authentication']['sasl']
@@ -181,7 +184,7 @@ class LDAP_Server(object):
         try:
             x, _ = decode(data, LDAPMessage())
             if (self._logger is not None) and self._debug:
-                self._logger.write(x)
+                self._logger.write(x.prettyPrint())
             self._msgid = x['messageID']
         except:
             if (self._logger is not None) and self._debug:
@@ -194,11 +197,11 @@ class LDAP_Server(object):
             if (self._logger is not None) and self._debug:
                 self._logger.write('LDAPMessage ->', op)
             if op == 'bindRequest':
-                self.BindRequest(op_x)
+                self.BindRequest(op_x[op])
             elif op == 'unbindRequest':
-                self.UnbindRequest(op_x)
+                self.UnbindRequest(op_x[op])
             elif op == 'searchRequest':
-                self.SearchRequest(op_x)
+                self.SearchRequest(op_x[op])
 
 
 

@@ -38,6 +38,8 @@ print_lock = threading.Lock()
 
 
 ini_filename = 'ldap_auth.ini'
+debug = False
+
 
 def search_ini_file():
     dirs = ['.', '/etc']
@@ -53,6 +55,8 @@ def search_ini_file():
 
 
 def create_auth_provider():
+    global debug
+
     fname = search_ini_file()
     if fname is None:
         # this is the simplest ...
@@ -66,6 +70,8 @@ def create_auth_provider():
     provider = str(default_config.get('provider', 'pam')).upper()
     realm = default_config.get('realm', None)
 
+    debug = default_config.getint('debug', 0) == 1
+    
     whitelists = default_config.get('whitelists', None)
 
     whitelist = WhiteLists(whitelists,logger=logger)
@@ -115,7 +121,7 @@ def create_auth_provider():
 # thread fuction
 
 def threaded(connection, auth_provider):
-    ldap_server = LDAP_Server(connection, auth_provider, logger=logger, debug=True)
+    ldap_server = LDAP_Server(connection, auth_provider, logger=logger, debug=debug)
 
     ldap_server.run()
     print_lock.release()
