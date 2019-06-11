@@ -140,6 +140,7 @@ class LDAP_Server(object):
 
         if data['authentication'].getName() == 'simple':
             self._auth_type = 0
+            print(data['authentication'].__class__)
             self._credentials = str(data['authentication'])
         else:
             self._auth_type = 1

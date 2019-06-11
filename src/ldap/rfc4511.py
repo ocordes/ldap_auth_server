@@ -641,7 +641,7 @@ class BindResponse(Sequence):
     #     COMPONENTS OF LDAPResult,
     #     serverSaslCreds    [7] OCTET STRING OPTIONAL }
     tag = Tag(tagClassApplication, tagFormatConstructed, 1)
-    amedValues = NamedValues(NamedType('resultCode', ResultCode()),
+    namedValues = NamedValues(NamedType('resultCode', ResultCode()),
                                NamedType('matchedDN', LDAPDN()),
                                NamedType('diagnosticMessage', LDAPString()),
                                OptionalNamedType('referral', Referral()),
