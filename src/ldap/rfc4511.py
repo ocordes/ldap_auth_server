@@ -489,20 +489,18 @@ class Not(Choice):
 
 class EqualityMatch(AttributeValueAssertion):
     # equalityMatch   [3] AttributeValueAssertion
-    #tag = Tag(tagClassContext, tagFormatConstructed, 3)
-    tag = Tag(tagClassContext, tagFormatSimple, 3)
+    tag = Tag(tagClassContext, tagFormatConstructed, 3)
 
 
 class GreaterOrEqual(AttributeValueAssertion):
     # greaterOrEqual  [5] AttributeValueAssertion
-    #tag = Tag(tagClassContext, tagFormatConstructed, 5)
-    tag = Tag(tagClassContext, tagFormatSimple, 5)
+    tag = Tag(tagClassContext, tagFormatConstructed, 5)
 
 
 class LessOrEqual(AttributeValueAssertion):
     # lessOrEqual     [6] AttributeValueAssertion
-    #tag = Tag(tagClassContext, tagFormatConstructed, 6)
-    tag = Tag(tagClassContext, tagFormatSimple, 6)
+    tag = Tag(tagClassContext, tagFormatConstructed, 6)
+
 
 
 class Present(AttributeDescription):
@@ -512,14 +510,13 @@ class Present(AttributeDescription):
 
 class ApproxMatch(AttributeValueAssertion):
     # approxMatch     [8] AttributeValueAssertion
-    #tag = Tag(tagClassContext, tagFormatConstructed, 8)
-    tag = Tag(tagClassContext, tagFormatSimple, 8)
+    tag = Tag(tagClassContext, tagFormatConstructed, 8)
 
 
 class ExtensibleMatch(MatchingRuleAssertion):
     # extensibleMatch [9] MatchingRuleAssertion
-    #tag = Tag(tagClassContext, tagFormatConstructed, 9)
-    tag = Tag(tagClassContext, tagFormatSimple, 9)
+    tag = Tag(tagClassContext, tagFormatConstructed, 9)
+    
 
 
 

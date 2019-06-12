@@ -3,7 +3,7 @@
 ldap/ldap_objects.py
 
 written by: Oliver Cordes 2019-05-28
-changed by: Oliver Cordes 2019-05-28
+changed by: Oliver Cordes 2019-06-12
 
 """
 
@@ -15,6 +15,8 @@ from ldap.asn1_debug import *
 from ldap.auth_provider import htpasswd_auth_provider
 
 from pyasn1 import debug
+
+import traceback
 
 
 class LDAP_Object(object):
@@ -189,6 +191,7 @@ class LDAP_Server(object):
         except:
             if (self._logger is not None) and self._debug:
                 self._logger.write('Error while decoding message')
+                self._logger.write(traceback.format_exc())
             x = None
 
         if x is not None:
