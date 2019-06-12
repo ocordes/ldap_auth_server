@@ -242,6 +242,8 @@ class asn1base(object):
     def decode(substrate, schema=None, name=None):
         if schema is not None:
             debug('decode called with schema: {} name={}'.format(schema.__class__.__name__, name))
+        else:
+            debug('decode called with None schema!')
         debug('substrate =', octed2string(substrate))
 
         substrate, tag, payload = asn1base.split_decode(substrate)
@@ -517,6 +519,8 @@ class Sequence(SequenceAndSet):
         if self._value is None:
             # create the list of possible entries
             self._value = []
+            debug('_initvalues({}):'.format(empty))
+            debug('len(namedValues)={}'.format(len(self.namedValues._namedtypes)))
             for i in self.namedValues._namedtypes:
                 if i._optional or empty:
                     obj = None
@@ -532,14 +536,15 @@ class Sequence(SequenceAndSet):
         self._initvalues(empty=True)
 
         # extract the next objects
-        debug('update_paylaod: sequence')
+        debug('update_paylaod: sequence({})'.format(self.__class__.__name__))
 
         id = 0
         while len(payload) > 0:
             schema = self.namedValues[id]
             obj, payload = asn1base.decode(payload, schema, self.namedValues.getname(id))
-            self._value[id] = obj
             debug('add sequcence: obj=', obj.__class__)
+            debug('_value={} id={} len={}'.format(self._value, id, len(self._value)))
+            self._value[id] = obj
             id += 1
         debug('update_payload_done: sequence')
 
@@ -577,11 +582,14 @@ class Set(SequenceAndSet):
         self._value = []
 
         # extract the next objects
-        debug('update_payload: set')
+        debug('update_payload: set({})'.format(self.__class__.__name__))
 
         ind = 0
         while len(payload) > 0:
+            if isinstance(self.components, NamedType) == False:
+                raise TypeError('components of {} has the wrong type!'.format(self.__class__.__name__))
             obj, payload = asn1base.decode(payload, self.components._schema, self.components._name)
+            #obj, payload = asn1base.decode(payload, self.components._schema, 'blubber')
             self._value.append(obj)
             #debug('set update_payload: ' , obj.prettyPrint())
             debug('add set: obj=', obj.__class__)
@@ -609,6 +617,20 @@ class Set(SequenceAndSet):
             else:
                 raise AttributeError('Set needs a list or tuple with values!')
 
+
+    def prettyPrint(self, indent=0):
+        if self._value is None:
+            raise ValueError('{} is not initialised'.format(self.__class__.__name__))
+        subitems = ''
+        for i in self._value:
+            if i is not None:
+                if isinstance(i, (Null, Boolean, Integer, OctetString)):
+                    subitems += '{}{}\n'.format(SPACES*(indent+1),i.get_value())
+                else:
+                    subitems += i.prettyPrint(indent+1)
+        return '{}{}:\n{}'.format(SPACES*indent,
+                                    self.getTreeName(),
+                                    subitems)
 
 
 class SequenceOf(Set):

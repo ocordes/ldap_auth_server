@@ -2,7 +2,7 @@
 ldap/rfc4511.py
 
 written by: Oliver Cordes 2019-06-08
-changed by: Oliver Cordes 2019-06-08
+changed by: Oliver Cordes 2019-06-12
 
 """
 
@@ -59,8 +59,8 @@ class MatchingRuleId(LDAPString):
 
 
 class Vals(Set):
-    # vals       SET OF value AttributeValue }
-    components = AttributeValue()
+    # vals       SET OF   value AttributeValue }
+    components = NamedType('vals', AttributeValue())
 
 
 
@@ -83,7 +83,7 @@ class Attribute(Sequence):
 
 class AttributeList(Set):
     # AttributeList ::= SEQUENCE OF attribute Attribute
-    components = Attribute()
+    components = NamedType('attribute', Attribute())
 
 
 class Simple(OctetString):
@@ -246,7 +246,7 @@ class URI(LDAPString):
 class Referral(Set):
     # Referral ::= SEQUENCE SIZE (1..MAX) OF uri URI
     tag = Tag(tagClassContext, tagFormatConstructed, 3)
-    components = URI()
+    components = NamedType('uri', URI())
 
 
 class ServerSaslCreds(OctetString):
@@ -337,7 +337,7 @@ class Control(Sequence):
 class Controls(Set):
     # Controls ::= SEQUENCE OF control Control
     tag = Tag(tagClassContext, tagFormatConstructed, 0)
-    components = Control()
+    components = NamedType('control', Control())
 
 
 
@@ -383,7 +383,7 @@ class AttributeSelection(SequenceOf):
     # AttributeSelection ::= SEQUENCE OF selector LDAPString
     #     -- The LDAPString is constrained to
     #     -- <attributeSelector> in Section 4.5.1.8
-    components = Selector()
+    components = NamedType('selector', Selector())
 
 
 class MatchingRule(MatchingRuleId):
@@ -449,7 +449,7 @@ class Substrings(Set):
     # ...
     # }
     #subtypeSpec = SequenceOf.subtypeSpec + size1ToMaxConstraint
-    components = Substring()
+    components = NamedType('substring', Substring())
 
 
 class SubstringFilter(Sequence):
@@ -516,7 +516,7 @@ class ApproxMatch(AttributeValueAssertion):
 class ExtensibleMatch(MatchingRuleAssertion):
     # extensibleMatch [9] MatchingRuleAssertion
     tag = Tag(tagClassContext, tagFormatConstructed, 9)
-    
+
 
 
 
@@ -549,7 +549,7 @@ Filter.namedValues = NamedValues(
 class PartialAttributeList(SequenceOf):
     # PartialAttributeList ::= SEQUENCE OF
     #     partialAttribute PartialAttribute
-    components = PartialAttribute()
+    components = NamedType('partialattribute', PartialAttribute())
 
 
 class Operation(Enumerated):
