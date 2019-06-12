@@ -40,12 +40,13 @@ def bytes2integer(s):
 
 
 def lengthtobytes(length):
-    bstr = length.to_bytes(30, 'big').lstrip(b'\x00')
-    if len(bstr) == 1:
-        return bstr
-    elif len(bstr) == 0:
+    if length == 0:
         return b'\x00'
+    elif length < 128:
+        return length.to_bytes(1,'big')
     else:
+        bstr = length.to_bytes(30, 'big').lstrip(b'\x00')
+        debug('lengthtobytes:', len(bstr), (128+len(bstr)).to_bytes(1, 'big') )
         lengthid = (128 + len(bstr)).to_bytes(1, 'big')
         return lengthid + bstr
 
@@ -480,14 +481,18 @@ class SequenceAndSet(asn1base):
                 raise AttributeError('\'{}\' is not in Sequence'.format(val))
 
         obj = self._value[id]
-        debug('__getitem__=', obj.__class__)
+        debug('SeqenceAndSet.__getitem__=', obj.__class__.__name__)
 
         return obj.get_value()
 
-        #if isinstance(obj, Choice):
-        #    return obj
-        #else:
-        #    return obj.get_value()
+
+    """
+    get_value
+
+    just refer to yourself, to mimik a list behaviour
+    """
+    def get_value(self):
+        return self
 
 
     def prettyPrint(self, indent=0):
@@ -582,7 +587,7 @@ class Set(SequenceAndSet):
         self._value = []
 
         # extract the next objects
-        debug('update_payload: set({})'.format(self.__class__.__name__))
+        debug('update_payload: Set({})'.format(self.__class__.__name__))
 
         ind = 0
         while len(payload) > 0:
@@ -592,7 +597,7 @@ class Set(SequenceAndSet):
             #obj, payload = asn1base.decode(payload, self.components._schema, 'blubber')
             self._value.append(obj)
             #debug('set update_payload: ' , obj.prettyPrint())
-            debug('add set: obj=', obj.__class__)
+            debug('add Set: obj=', obj.__class__)
             ind += 1
         debug('update_payload_done: set')
 
@@ -601,16 +606,31 @@ class Set(SequenceAndSet):
         return 'Set({} entries)'.format(len(self._value))
 
 
-    def get_value(self):
-        return [i.get_value() for i in self._value]
+    def append(self, val):
+        debug('Set.append({})'.format(val))
+        debug('Set.append: type(val)={} type(schema)={}'.format(type(val), type(self.components._schema)))
+        if type(val) == type(self.components._schema):
+            obj = val
+        else:
+            # the case that values are (hopefully) strings
+            # get the obj type from schema and sets the values
+            obj = copy.copy(self.components._schema)
+            obj.set_value(val)
+
+        # tricky, set the name, even if the obj exists, because
+        # during creation the obj cannot know the name, which is
+        # defined in the next object layer!
+        obj.setName(self.components._name)
+        self._value.append(obj)
 
 
     def set_value(self, val):
+        debug('Set.set_value({})'.format(val))
         if isinstance(val, (list,tuple)):
             if self._value is None:
                 self._value = []
             for i in val:
-                self._value.append(i)
+                self.append(i)
         else:
             if val is None:
                 self._value = []
@@ -624,6 +644,7 @@ class Set(SequenceAndSet):
         subitems = ''
         for i in self._value:
             if i is not None:
+                debug('set.prettyPrint: i={}'.format(i.__class__.__name__))
                 if isinstance(i, (Null, Boolean, Integer, OctetString)):
                     subitems += '{}{}\n'.format(SPACES*(indent+1),i.get_value())
                 else:

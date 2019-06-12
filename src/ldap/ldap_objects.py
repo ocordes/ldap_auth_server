@@ -13,6 +13,7 @@ from ldap.rfc4511 import *
 from ldap.asn1_debug import *
 
 from ldap.auth_provider import htpasswd_auth_provider
+from ldap.database import Database
 
 from pyasn1 import debug
 
@@ -29,6 +30,7 @@ class LDAP_Object(object):
         data = encode(newdata)
         if (self._logger is not None) and self._debug:
             self._logger.write('-->', data)
+            self._logger.write('-->', octed2string(data))
         x, _ = decode(data, LDAPMessage())
         if (self._logger is not None) and self._debug:
             self._logger.write(x)
@@ -81,8 +83,8 @@ class LDAP_BindResponse(LDAP_Result):
 
 
 class LDAP_SearchResultDone(LDAP_Result):
-    def __init__(self, logger=None, debug=False):
-        LDAP_Result.__init__(self, 32, logger=logger, debug=debug)
+    def __init__(self, result_code=32, logger=None, debug=False):
+        LDAP_Result.__init__(self, result_code, logger=logger, debug=debug)
 
 
     def run(self, connection, msgid):
@@ -96,10 +98,44 @@ class LDAP_SearchResultDone(LDAP_Result):
         self.send(connection, l)
 
 
+class LDAP_SearchResultEntry(LDAP_Object):
+    def __init__(self, dn, data, logger=None, debug=False):
+        LDAP_Object.__init__(self, logger=logger, debug=debug)
+
+        self._dn   = dn
+        self._data = data
+
+
+    def run(self, connection, msgid):
+        search_result_entry = SearchResultEntry()
+        search_result_entry['object'] = self._dn
+        search_result_entry['attributes'] = []
+
+        for key in self._data.keys():
+            attr = PartialAttribute()
+            attr['type'] = key
+            if isinstance(self._data[key], (tuple,list)):
+                attr['vals'] = self._data[key]
+            else:
+                attr['vals'] = [self._data[key]]
+            search_result_entry['attributes'].append(attr)
+
+        l = LDAPMessage()
+        l['messageID'] = msgid
+        l['protocolOp'] = search_result_entry
+        if self._logger is not None:
+            self._logger.write(l.prettyPrint())
+        self.send(connection, l)
+
+
 class LDAP_Server(object):
-    def __init__(self, connection, auth_provider, logger=None, debug=False):
+    def __init__(self, connection, auth_provider, database=None, logger=None, debug=False):
         self._logger = logger
         self._debug = debug
+        if database is not None:
+            self._database = Database(logger=logger)
+        else:
+            self._database = None
         self._connection = connection
         self._msgid      = 1
 
@@ -162,7 +198,6 @@ class LDAP_Server(object):
             bind_response.diagMessage(msg)
 
         bind_response.run(self._connection, self._msgid)
-        #self._msgid += 1
 
 
     def UnbindRequest(self, data):
@@ -176,11 +211,29 @@ class LDAP_Server(object):
 
 
     def SearchRequest(self, data):
-        search_result_done = LDAP_SearchResultDone(logger=self._logger, debug=self._debug)
+        success = False
+        if self._database is not None:
+            results = self._database.search_database(data, self._name)
+            for key in results.keys():
+                self._logger.write('search_result:', key)
+                result_entry = LDAP_SearchResultEntry(key, results[key], logger=self._logger, debug=self._debug)
+                result_entry.run(self._connection, self._msgid)
+                success = True
+
+        if success:
+            search_result_done = LDAP_SearchResultDone(result_code=0, logger=self._logger, debug=self._debug)
+        else:
+            search_result_done = LDAP_SearchResultDone(logger=self._logger, debug=self._debug)
         search_result_done.run(self._connection, self._msgid)
-        self._msgid += 1
 
 
+    """
+    handle_message
+
+    decodes the incoming LDAPMessage and redicted the decoded payload
+    to the subroutines, the msgid is extracted and used for any related
+    LDAP response messages!
+    """
     def handle_message(self, data):
         #debug.setLogger(debug.Debug('all'))
         try:

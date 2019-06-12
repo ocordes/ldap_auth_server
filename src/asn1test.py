@@ -108,3 +108,36 @@ if __name__ == '__main__':
     x, sub = decode(data, schema=LDAPMessage())
 
     print(x.prettyPrint())
+
+
+    search_result_entry = SearchResultEntry()
+    search_result_entry['object'] = 'omc'
+
+    attr1 = PartialAttribute()
+    attr1['type'] = 'objectClass'
+    attr1['vals'] = ['hallo', 'berta']
+
+    attr2 = PartialAttribute()
+    attr2['type'] = 'email'
+    attr2['vals'] = ['mail@mail.mail', 'email@email.email']
+
+    print(attr1.prettyPrint())
+    print(attr2.prettyPrint())
+
+    search_result_entry['attributes'] = []
+    print('append')
+    print(search_result_entry['attributes'])
+    search_result_entry['attributes'].append(attr1)
+    search_result_entry['attributes'].append(attr2)
+
+    print(search_result_entry.prettyPrint())
+
+    l = LDAPMessage()
+    l['messageID'] = 2
+    l['protocolOp'] = search_result_entry
+    data = encode(l)
+    print(data)
+
+    x, sub = decode(data, schema=LDAPMessage())
+
+    print(x.prettyPrint())
