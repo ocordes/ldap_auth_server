@@ -2,7 +2,7 @@
 ldap/database.py
 
 written by: Oliver Cordes 2019-06-12
-changed by: Oliver Cordes 2019-06-12
+changed by: Oliver Cordes 2019-09-10
 
 """
 import re
@@ -56,17 +56,26 @@ class Database(object):
         return username, realm
 
 
-    def search_database(self, searchobj, username):
+    def search_database(self, searchobj, username, userlist):
         username, realm = self.split_username(username)
         if self._logger is not None:
             self._logger.write('database: username={} realm={}'.format(username, realm))
 
-
         result = {}
 
-        databasename = 'uid={},{}'.format(username, realm)
-        result[databasename] = self.create_fake_database_entry(fake_database_entry, username, realm)
+        # check if realm is identical to the baseObject
 
-        self._logger.write(result)
+        if searchobj['baseObject'] == realm:
+            self._logger.write('searching the complete database')
+            for username in userlist:
+               dbname = 'uid={},{}'.format(username, realm)
+               result[dbname] = self.create_fake_database_entry(fake_database_entry, username, realm)
+        else:
+            self._logger.write('return the info of the login user ony')
+
+            databasename = 'uid={},{}'.format(username, realm)
+            result[databasename] = self.create_fake_database_entry(fake_database_entry, username, realm)
+
+        #self._logger.write(result)
 
         return result

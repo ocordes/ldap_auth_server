@@ -3,7 +3,7 @@
 ldap/whitelists.py
 
 written by: Oliver Cordes 2019-06-04
-changed by: Oliver Cordes 2019-06-04
+changed by: Oliver Cordes 2019-09-10
 
 """
 
@@ -63,3 +63,12 @@ class WhiteLists(object):
                 return True
 
         return False
+
+
+    def get_userlist(self):
+        self._updatelists()
+        users = []
+        for i in self._whitelist:
+           userlist = [u for u in self._whitelist[i][1]]
+           users += userlist
+        return users

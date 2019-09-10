@@ -2,7 +2,7 @@
 ldap/auth_provider.py
 
 written by: Oliver Cordes 2019-06-03
-changed by: Oliver Cordes 2019-06-04
+changed by: Oliver Cordes 2019-09-10
 
 """
 
@@ -34,6 +34,10 @@ class auth_provider(object):
             self._logger = log.logger(log.LOGGER_STDOUT)
 
         self._whitelist = whitelist
+
+
+    def get_userlist(self):
+        return self._whitelist.get_userlist()
 
 
     def authenticate(self, credentials):

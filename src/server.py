@@ -56,7 +56,7 @@ def search_ini_file():
 
 
 def create_auth_provider():
-    global debug, database
+    global debug, database, logger
 
     fname = search_ini_file()
     if fname is None:
@@ -68,6 +68,12 @@ def create_auth_provider():
         return pam_auth_provider(logger=logger)
 
     default_config = config['DEFAULT']
+
+    logfile = default_config.get('logfile', None)
+    if logfile is not None:
+       logger.write('Switching to file \'%s\' ... ' % logfile )
+       logger = log.logger(log.LOGGER_FILE, logfilename=logfile)
+
     provider = str(default_config.get('provider', 'pam')).upper()
     realm = default_config.get('realm', None)
 

@@ -3,7 +3,7 @@
 ldap/ldap_objects.py
 
 written by: Oliver Cordes 2019-05-28
-changed by: Oliver Cordes 2019-06-12
+changed by: Oliver Cordes 2019-09-10
 
 """
 
@@ -213,7 +213,7 @@ class LDAP_Server(object):
     def SearchRequest(self, data):
         success = False
         if self._database is not None:
-            results = self._database.search_database(data, self._name)
+            results = self._database.search_database(data, self._name, self._auth_provider.get_userlist())
             for key in results.keys():
                 self._logger.write('search_result:', key)
                 result_entry = LDAP_SearchResultEntry(key, results[key], logger=self._logger, debug=self._debug)
