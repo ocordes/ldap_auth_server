@@ -3,7 +3,7 @@
 ldap/logger.py
 
 written by: Oliver Cordes 2019-06-04
-changed by: Oliver Cordes 2019-06-04
+changed by: Oliver Cordes 2019-09-11
 
 """
 
@@ -33,8 +33,11 @@ class logger(object):
 
 
     def __del__(self):
-        if self._logfile not in (sys.stdout, sys.stderr):
-            self._logfile.close()
+        try:
+           if self._logfile not in (sys.stdout, sys.stderr):
+               self._logfile.close() 
+        except:
+           pass
 
 
     def write(self, *vars):
