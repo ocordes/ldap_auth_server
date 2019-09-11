@@ -201,9 +201,7 @@ class asn1base(object):
 
     @staticmethod
     def split_decode(substrate):
-        #print('Tag coded:', substrate[0])
         tag = Tag.decode(substrate[0])
-        #print('Tag decoded:', tag)
         l1 = substrate[1]
         payload_start = 2
 
@@ -594,9 +592,7 @@ class Set(SequenceAndSet):
             if isinstance(self.components, NamedType) == False:
                 raise TypeError('components of {} has the wrong type!'.format(self.__class__.__name__))
             obj, payload = asn1base.decode(payload, self.components._schema, self.components._name)
-            #obj, payload = asn1base.decode(payload, self.components._schema, 'blubber')
             self._value.append(obj)
-            #debug('set update_payload: ' , obj.prettyPrint())
             debug('add Set: obj=', obj.__class__)
             ind += 1
         debug('update_payload_done: set')

@@ -66,12 +66,12 @@ class Database(object):
         # check if realm is identical to the baseObject
 
         if searchobj['baseObject'] == realm:
-            self._logger.write('searching the complete database')
+            self._logger.write('database: searching the complete database')
             for username in userlist:
                dbname = 'uid={},{}'.format(username, realm)
                result[dbname] = self.create_fake_database_entry(fake_database_entry, username, realm)
         else:
-            self._logger.write('return the info of the login user ony')
+            self._logger.write('database: return the info of the login user ony')
 
             databasename = 'uid={},{}'.format(username, realm)
             result[databasename] = self.create_fake_database_entry(fake_database_entry, username, realm)

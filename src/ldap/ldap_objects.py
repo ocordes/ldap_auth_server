@@ -123,8 +123,6 @@ class LDAP_SearchResultEntry(LDAP_Object):
         l = LDAPMessage()
         l['messageID'] = msgid
         l['protocolOp'] = search_result_entry
-        if self._logger is not None:
-            self._logger.write(l.prettyPrint())
         self.send(connection, l)
 
 
@@ -215,7 +213,8 @@ class LDAP_Server(object):
         if self._database is not None:
             results = self._database.search_database(data, self._name, self._auth_provider.get_userlist())
             for key in results.keys():
-                self._logger.write('search_result:', key)
+                if self._debug:
+                   self._logger.write('search_result:', key)
                 result_entry = LDAP_SearchResultEntry(key, results[key], logger=self._logger, debug=self._debug)
                 result_entry.run(self._connection, self._msgid)
                 success = True
