@@ -40,5 +40,6 @@ class logger(object):
     def write(self, *vars):
         dt = datetime.datetime.now()
         s = ' '.join([str(i) for i in vars])
+        self._logfile.seek(0, 2)       # seek to files end 
         print('{}: {}'.format(dt.strftime('%F %T'), s),
                  file=self._logfile, flush=True)
