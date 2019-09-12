@@ -1,0 +1,13 @@
+[Unit]
+Description=LDAP Authentication Server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/ldap_auth_server.pid
+ExecStart=/root/ldap_auth_server/src/ldap_auth_server start
+ExecStop=/root/ldap_auth_server/src/ldap_auth_server stop
+
+
+[Install]
+WantedBy=multi-user.target

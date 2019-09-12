@@ -1,0 +1,43 @@
+#!/bin/bash
+
+
+task=${1:-"status"}
+
+
+BINPATH=$(dirname $0)
+
+BINEXEC="python $BINPATH/server.py"
+
+# setup python environment
+source /root/virtualenv/ldap_auth_server/bin/activate
+
+PIDFILE=/var/run/ldap_auth_server.pid
+
+
+case $task in
+  start) if [ -f $PIDFILE ]; then
+            echo "PID file is still there! Refuse to start!"
+            exit 1
+         fi
+         $BINEXEC &
+         echo $! > $PIDFILE
+         ;;
+  status) if [ -f $PIDFILE ]; then
+             PID=`cat $PIDFILE`
+             echo "Server is running with PID $PID"
+          else
+             echo "Server is not running"
+          fi
+          ;;
+  stop) if [ -f $PIDFILE ]; then
+           PID=`cat $PIDFILE`
+           kill -KILL $PID
+           rm -f $PIDFILE
+        else
+           echo "Server is not running"
+        fi
+        ;;
+esac
+
+
+exit 0
