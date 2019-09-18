@@ -85,7 +85,7 @@ class gss_realm_auth_provider(auth_provider):
     def __init__(self, logger=None, whitelist=None):
         auth_provider.__init__(self,logger=logger, whitelist=whitelist)
 
-        self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z]+),(?P<realm>.+)')
+        self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z0-9]+),(?P<realm>.+)')
         self._realm_re = re.compile('dc=(?P<dc>[a-zA-Z\-_]+)')
 
 

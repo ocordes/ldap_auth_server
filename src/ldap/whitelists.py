@@ -36,7 +36,11 @@ class WhiteLists(object):
             with open(filename) as f:
                 lines = f.read().splitlines()
 
-            return mtime, lines
+            nlines = []
+            for i in lines:
+              nlines.append(i.strip())
+
+            return mtime, nlines
         else:
             return None, None
 
