@@ -84,9 +84,11 @@ def create_auth_provider():
 
     whitelist = WhiteLists(whitelists,logger=logger)
 
+    guest_accounts = default_config.get('guest_accounts', None)
+
     if provider == 'PAM':
         logger.write('Using PAM authentication provider...')
-        auth_provider = pam_auth_provider(realm=realm, logger=logger, whitelist=whitelist)
+        auth_provider = pam_auth_provider(realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
     elif provider == 'HTPASSWD':
         print('Using htpasswd authentication provider...')
         if provider in config:
@@ -94,7 +96,7 @@ def create_auth_provider():
         else:
             logger.write('HTPASSWD section not found!')
             htpasswd = 'htpasswd'
-        auth_provider = htpasswd_auth_provider(htpasswd, realm=realm, logger=logger, whitelist=whitelist)
+        auth_provider = htpasswd_auth_provider(htpasswd, realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
     elif provider == 'TEST':
         logger.write('Using test authentication provider...')
         if provider in config:
@@ -102,7 +104,7 @@ def create_auth_provider():
         else:
             logger.write('TEST section not found!')
             credentials = 'test:test'
-        auth_provider = test_auth_provider(credentials, realm=realm, logger=logger, whitelist=whitelist)
+        auth_provider = test_auth_provider(credentials, realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
     elif provider == 'SASL':
         logger.write('Using sasl authentication provider...')
         if provider in config:
@@ -110,7 +112,7 @@ def create_auth_provider():
         else:
             logger.write('SASL section not found!')
             binary = '/bin/ls'
-        auth_provider = sasl_auth_provider(binary, logger=logger, whitelist=whitelist)
+        auth_provider = sasl_auth_provider(binary, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
     elif provider == 'KRB5':
         logger.write('Using krb5 authentication provider...')
         if provider in config:
@@ -118,7 +120,7 @@ def create_auth_provider():
         else:
             logger.write('KRB5 section not found!')
             service = None
-        auth_provider = krb5_auth_provider(service, logger=logger, whitelist=whitelist)
+        auth_provider = krb5_auth_provider(service, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
     else:
         auth_provider = auth_provider
 
