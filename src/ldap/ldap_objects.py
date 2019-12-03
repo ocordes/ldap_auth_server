@@ -79,6 +79,8 @@ class LDAP_BindResponse(LDAP_Result):
         l = LDAPMessage()
         l['messageID'] = msgid
         l['protocolOp'] = bind_response
+        if (self._logger is not None) and self._debug:
+            self._logger.write('--> msgID', msgid)
         self.send(connection, l)
 
 
@@ -295,8 +297,10 @@ class LDAP_Server(object):
             if not data:
                 break
 
-            #if self._logger is not None:
+            if (self._logger is not None) and self._debug:
             #    self._logger.write(data)
             #    self._logger.write('d:', ' '.join([str(i) for i in data]))
+               self._logger.write('<--', data)
+               self._logger.write('<--', octed2string(data))
 
             self.handle_message(data)

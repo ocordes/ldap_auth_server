@@ -46,6 +46,7 @@ class WhiteLists(object):
 
 
     def _updatelists(self):
+        if self._whitelist is None: return
         for i in self._whitelist:
             mtime, data = self._readlist(i, self._whitelist[i][0])
             if mtime is not None:
@@ -72,7 +73,8 @@ class WhiteLists(object):
     def get_userlist(self):
         self._updatelists()
         users = []
-        for i in self._whitelist:
-           userlist = [u for u in self._whitelist[i][1]]
-           users += userlist
+        if self._whitelist is not None:
+           for i in self._whitelist:
+              userlist = [u for u in self._whitelist[i][1]]
+              users += userlist
         return users

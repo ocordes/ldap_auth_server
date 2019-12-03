@@ -43,7 +43,10 @@ class auth_provider(object):
 
 
     def get_userlist(self):
-        return self._whitelist.get_userlist() + self._guest_accounts
+        ulist = self._whitelist.get_userlist()
+        if self._guest_accounts is not None:
+           ulist += self._guest_accounts
+        return ulist
 
 
     def authenticate(self, credentials):

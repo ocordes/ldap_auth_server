@@ -388,6 +388,8 @@ class Integer(asn1base):
             bstr = b'\x00'
         else:
             bstr = self._value.to_bytes(10, 'big').lstrip(b'\x00')
+            if self._value > 127:
+               bstr = b'\x00' + bstr
 
         return self.encodepayload(bstr)
 
@@ -722,4 +724,4 @@ class Choice(asn1base):
 
 
 if __name__ == '__main__':
-    pass
+    print(lengthtobytes(10))
