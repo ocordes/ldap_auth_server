@@ -137,7 +137,7 @@ def threaded(connection, auth_provider):
     ldap_server.run()
     print_lock.release()
     # connection closed
-    logger.write('Closing the connection!')
+    logger.writeid(connection.fileno(), 'Closing the connection!')
     connection.close()
 
 
@@ -182,7 +182,7 @@ def Main():
 
             # lock acquired by client
             print_lock.acquire()
-            logger.write('Connected to :', addr[0], ':', addr[1])
+            logger.writeid(c.fileno(), 'Connected to :', addr[0], ':', addr[1])
 
             # Start a new thread and return its identifier
             start_new_thread(threaded, (c,auth_provider))

@@ -3,7 +3,7 @@
 ldap/logger.py
 
 written by: Oliver Cordes 2019-06-04
-changed by: Oliver Cordes 2019-09-11
+changed by: Oliver Cordes 2019-12-04
 
 """
 
@@ -40,9 +40,41 @@ class logger(object):
            pass
 
 
-    def write(self, *vars):
+    def write_old(self, *vars):
         dt = datetime.datetime.now()
         s = ' '.join([str(i) for i in vars])
+        if self._id is not None:
+          s = '#{}: '.format(self._id)+s
         self._logfile.seek(0, 2)       # seek to files end 
         print('{}: {}'.format(dt.strftime('%F %T'), s),
                  file=self._logfile, flush=True)
+
+
+    def writeid(self, id, *vars):
+        dt = datetime.datetime.now()
+        s = ' '.join([str(i) for i in vars])
+        if id is not None:
+          s = '#{}: '.format(id)+s
+        self._logfile.seek(0, 2)       # seek to files end
+        print('{}: {}'.format(dt.strftime('%F %T'), s),
+                 file=self._logfile, flush=True)
+
+
+    def write(self, *vars):
+        self.writeid(None, *vars)
+
+
+
+class loggerid(object):
+    def __init__(self, logger, id):
+        self._logger = logger
+        self._id = id
+  
+    def write(self, *vars):
+        if self._logger is not None:
+            self._logger.writeid(self._id, *vars)
+
+
+    def writeid(self, id, *vars):
+       if self._logger is not None:
+            self._logger.writeid(id, *vars)

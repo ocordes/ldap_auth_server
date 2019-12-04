@@ -17,6 +17,8 @@ from ldap.database import Database
 
 from pyasn1 import debug
 
+from ldap.logger import loggerid
+
 import traceback
 
 
@@ -28,11 +30,11 @@ class LDAP_Object(object):
 
     def send(self, connection, newdata):
         data = encode(newdata)
-        if (self._logger is not None) and self._debug:
+        if self._debug:
             self._logger.write('-->', data)
             self._logger.write('-->', octed2string(data))
         x, _ = decode(data, LDAPMessage())
-        if (self._logger is not None) and self._debug:
+        if self._debug:
             self._logger.write(x)
         connection.send(data)
 
@@ -130,7 +132,7 @@ class LDAP_SearchResultEntry(LDAP_Object):
 
 class LDAP_Server(object):
     def __init__(self, connection, auth_provider, database=None, logger=None, debug=False):
-        self._logger = logger
+        self._logger = loggerid(logger, connection.fileno())
         self._debug = debug
         if database is not None:
             self._database = Database(logger=logger)
