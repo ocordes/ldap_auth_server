@@ -2,7 +2,7 @@
 ldap/auth_provider.py
 
 written by: Oliver Cordes 2019-06-03
-changed by: Oliver Cordes 2019-10-09
+changed by: Oliver Cordes 2020-03-02
 
 """
 
@@ -27,7 +27,12 @@ import ldap.logger as log
 
 
 class auth_provider(object):
-    def __init__(self, logger=None, whitelist=None, guest_accounts=None):
+    def __init__(self,
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
         self._logger = logger
 
         if self._logger is None:
@@ -40,6 +45,19 @@ class auth_provider(object):
                self._logger.write('guest accounts: %s' % self._guest_accounts)
         else:
            self._guest_accounts = None
+
+        self._extra_htpasswd = None
+        if extra_htpasswd is not None:
+            if extra_realm is None:
+                self._logger.write('No realm for extra accounts defined!')
+            else:
+                self._logger.write('Using extra htpasswd accounts...')
+
+                self._extra_htpasswd = htpasswd_auth_provider(extra_htpasswd,
+                                                              realm=extra_realm,
+                                                              logger=self._logger)
+
+
 
 
     def get_userlist(self):
@@ -59,7 +77,7 @@ class auth_provider(object):
 
     def is_guest(self, username):
         """
-        handle guest accounts 
+        handle guest accounts
         """
         if self._guest_accounts is not None:
            self._logger.write('test guest account: %s' % username)
@@ -76,8 +94,19 @@ basic class to split a LDAP username into some real
 usernam + real
 """
 class realm_auth_provider(auth_provider):
-    def __init__(self, realm=None, logger=None, whitelist=None, guest_accounts=None):
-        auth_provider.__init__(self,logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 realm=None,
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
+        auth_provider.__init__(self,
+                               logger=logger,
+                               whitelist=whitelist,
+                               guest_accounts=guest_accounts,
+                               extra_htpasswd=extra_htpasswd,
+                               extra_realm=extra_realm)
 
         self._realm = realm
         if realm is None:
@@ -148,8 +177,21 @@ takes a simple string as username:password combination, comma seperated
 """
 
 class test_auth_provider(realm_auth_provider):
-    def __init__(self, credentials, realm=None, logger=None, whitelist=None, guest_accounts=None):
-        realm_auth_provider.__init__(self, realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 credentials,
+                 realm=None,
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
+        realm_auth_provider.__init__(self,
+                                     realm=realm,
+                                     logger=logger,
+                                     whitelist=whitelist,
+                                     guest_accounts=guest_accounts,
+                                     extra_htpasswd=extra_htpasswd,
+                                     extra_realm=extra_realm)
 
         self._data = {}
         c = credentials.replace(' ', '')
@@ -165,8 +207,15 @@ class test_auth_provider(realm_auth_provider):
 
         username = self.get_real_username(username)
 
+        # test guest accounts
         if self.is_guest(username):
            return True
+
+        # test extra htpasswd accounts
+        if self._extra_htpasswd is not None:
+            res = self._extra_htpasswd.authenticate(credentials)
+            if res:
+                return True
 
         if self._whitelist.whitelisted(username):
             # accept by whitelist
@@ -187,8 +236,17 @@ is necessary to extract the username from a LDAP People element!
 
 """
 class htpasswd_auth_provider(realm_auth_provider):
-    def __init__(self, filename, realm=None, logger=None, whitelist=None, guest_accounts=None):
-        realm_auth_provider.__init__(self,realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 filename,
+                 realm=None,
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None):
+        realm_auth_provider.__init__(self,
+                                     realm=realm,
+                                     logger=logger,
+                                     whitelist=whitelist,
+                                     guest_accounts=guest_accounts)
 
         self._data = HtpasswdFile(filename)
 
@@ -224,8 +282,17 @@ class unix_auth_provider(realm_auth_provider):
 
         username = self.get_real_username(username)
 
+        # test gest accounts
         if self.is_guest(username):
            return True
+
+        # test extra htpasswd accounts
+        if self._extra_htpasswd is not None:
+            res = self._extra_htpasswd.authenticate(credentials)
+            if res:
+                return True
+
+
 
         try:
             cryptedpasswd = pwd.getpwnam(username)[1]
@@ -247,8 +314,22 @@ pam_auth_provider
 is a simple authentication provider for unix accounts via PAM
 """
 class pam_auth_provider(realm_auth_provider):
-    def __init__(self, realm=None, service='login', logger=None, whitelist=None, guest_accounts=None):
-        realm_auth_provider.__init__(self, realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 realm=None,
+                 service='login',
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
+        realm_auth_provider.__init__(self,
+                                     realm=realm,
+                                     logger=logger,
+                                     whitelist=whitelist,
+                                     guest_accounts=guest_accounts,
+                                     extra_htpasswd=extra_htpasswd,
+                                     extra_realm=extra_realm
+                                     )
 
         self._pam = pam.pam()
         self._service = service
@@ -260,8 +341,15 @@ class pam_auth_provider(realm_auth_provider):
 
         username = self.get_real_username(username)
 
+        # test guest accounts
         if self.is_guest(username):
            return True
+
+        # test extra htpasswd accounts
+        if self._extra_htpasswd is not None:
+            res = self._extra_htpasswd.authenticate(credentials)
+            if res:
+                return True
 
         return self._pam.authenticate(username, password, self._service)
 
@@ -272,8 +360,20 @@ sasl_auth_provider
 is a simple authentication provider which uses sasl to authenticate
 """
 class sasl_auth_provider(gss_realm_auth_provider):
-    def __init__(self, binary, service='ldap', logger=None, whitelist=None, guest_accounts=None):
-        gss_realm_auth_provider.__init__(self, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 binary,
+                 service='ldap',
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
+        gss_realm_auth_provider.__init__(self,
+                                         logger=logger,
+                                         whitelist=whitelist,
+                                         guest_accounts=guest_accounts,
+                                         extra_htpasswd=extra_htpasswd,
+                                         extra_realm=extra_realm)
 
         self._binary = binary
 
@@ -303,6 +403,17 @@ class sasl_auth_provider(gss_realm_auth_provider):
         username = credentials['user']
         password = credentials['password']
 
+
+        # test guest accounts
+        if self.is_guest(username):
+           return True
+
+        # test extra htpasswd accounts
+        if self._extra_htpasswd is not None:
+            res = self._extra_htpasswd.authenticate(credentials)
+            if res:
+                return True
+
         result, msg = self.call_saslauthd(username, password)
 
         return result == 'OK'
@@ -317,8 +428,19 @@ WARNING: the authentication mechanism works as follows, the library
          kinit ! Nothing more is done! The library warns about KDC spoofing!
 """
 class krb5_auth_provider(gss_realm_auth_provider):
-    def __init__(self, service=None, logger=None, whitelist=None, guest_accounts=None):
-        gss_realm_auth_provider.__init__(self, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 service=None,
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
+        gss_realm_auth_provider.__init__(self,
+                                         logger=logger,
+                                         whitelist=whitelist,
+                                         guest_accounts=guest_accounts,
+                                         extra_htpasswd=extra_htpasswd,
+                                         extra_realm=extra_realm)
 
         self._service = service
 
@@ -329,8 +451,15 @@ class krb5_auth_provider(gss_realm_auth_provider):
 
         username, realm = self.get_real_username(username)
 
+        # test guest accounts
         if self.is_guest(username):
            return True
+
+        # test extra htpasswd accounts
+        if self._extra_htpasswd is not None:
+            res = self._extra_htpasswd.authenticate(credentials)
+            if res:
+                return True
 
         if not self._whitelist.whitelisted(username):
             return False

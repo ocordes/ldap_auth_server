@@ -1,4 +1,12 @@
-# import socket programming library
+#!/usr/bin/env python3
+
+"""
+server.py
+
+written by: Oliver Cordes 2019-06-03
+changed by: Oliver Cordes 2020-03-02
+
+"""
 
 import os, sys
 import socket, time
@@ -84,11 +92,21 @@ def create_auth_provider():
 
     whitelist = WhiteLists(whitelists,logger=logger)
 
+    # read guest configs
     guest_accounts = default_config.get('guest_accounts', None)
+
+    # read local htpasswd
+    extra_htpasswd = default_config.get('extra_htpasswd', None)
 
     if provider == 'PAM':
         logger.write('Using PAM authentication provider...')
-        auth_provider = pam_auth_provider(realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+        auth_provider = pam_auth_provider(realm=realm,
+                                          logger=logger,
+                                          whitelist=whitelist,
+                                          guest_accounts=guest_accounts,
+                                          extra_htpasswd=extra_htpasswd,
+                                          extra_realm=realm
+                                          )
     elif provider == 'HTPASSWD':
         print('Using htpasswd authentication provider...')
         if provider in config:
@@ -104,7 +122,14 @@ def create_auth_provider():
         else:
             logger.write('TEST section not found!')
             credentials = 'test:test'
-        auth_provider = test_auth_provider(credentials, realm=realm, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+        auth_provider = test_auth_provider(credentials,
+                                            realm=realm,
+                                            logger=logger,
+                                            whitelist=whitelist,
+                                            guest_accounts=guest_accounts,
+                                            extra_htpasswd=extra_htpasswd,
+                                            extra_realm=realm
+                                           )
     elif provider == 'SASL':
         logger.write('Using sasl authentication provider...')
         if provider in config:
@@ -112,7 +137,13 @@ def create_auth_provider():
         else:
             logger.write('SASL section not found!')
             binary = '/bin/ls'
-        auth_provider = sasl_auth_provider(binary, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+        auth_provider = sasl_auth_provider(binary,
+                                           logger=logger,
+                                           whitelist=whitelist,
+                                           guest_accounts=guest_accounts,
+                                           extra_htpasswd=extra_htpasswd,
+                                           extra_realm=realm
+                                          )
     elif provider == 'KRB5':
         logger.write('Using krb5 authentication provider...')
         if provider in config:
@@ -120,7 +151,13 @@ def create_auth_provider():
         else:
             logger.write('KRB5 section not found!')
             service = None
-        auth_provider = krb5_auth_provider(service, logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+        auth_provider = krb5_auth_provider(service,
+                                            logger=logger,
+                                            whitelist=whitelist,
+                                            guest_accounts=guest_accounts,
+                                            extra_htpasswd=extra_htpasswd,
+                                            extra_realm=realm
+                                           )
     else:
         auth_provider = auth_provider
 
