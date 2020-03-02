@@ -112,7 +112,7 @@ class realm_auth_provider(auth_provider):
         if realm is None:
             self._realm = None
         else:
-            self._realm = re.compile(r'((uid)|(cn))=(?P<word>[a-zA-Z]+),'+realm)
+            self._realm = re.compile(r'((uid)|(cn))=(?P<word>[a-zA-Z][a-zA-Z0-9]+),'+realm)
 
 
     def get_real_username(self, name):
@@ -146,7 +146,7 @@ class gss_realm_auth_provider(auth_provider):
                                extra_htpasswd=extra_htpasswd,
                                extra_realm=extra_realm)
 
-        self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z0-9]+),(?P<realm>.+)')
+        self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z][a-zA-Z0-9]+),(?P<realm>.+)')
         self._realm_re = re.compile('dc=(?P<dc>[a-zA-Z\-_]+)')
 
 
