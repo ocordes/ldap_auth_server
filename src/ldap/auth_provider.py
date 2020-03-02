@@ -133,8 +133,18 @@ gss_realm_auth_provider
 provides a seperation of the username into a real username and a realm
 """
 class gss_realm_auth_provider(auth_provider):
-    def __init__(self, logger=None, whitelist=None, guest_accounts=None):
-        auth_provider.__init__(self,logger=logger, whitelist=whitelist, guest_accounts=guest_accounts)
+    def __init__(self,
+                 logger=None,
+                 whitelist=None,
+                 guest_accounts=None,
+                 extra_htpasswd=None,
+                 extra_realm=None):
+        auth_provider.__init__(self,
+                               logger=logger,
+                               whitelist=whitelist,
+                               guest_accounts=guest_accounts,
+                               extra_htpasswd=extra_htpasswd,
+                               extra_realm=extra_realm)
 
         self._re = re.compile(r'((uid)|(cn))=(?P<user>[a-zA-Z0-9]+),(?P<realm>.+)')
         self._realm_re = re.compile('dc=(?P<dc>[a-zA-Z\-_]+)')
