@@ -754,6 +754,18 @@ class Nested(asn1base):
         self._value = obj
 
 
+    def __getitem__(self, ind):
+        debug('Nested[{}] start'.format(ind))
+        if isinstance(ind, str):
+            if ind == self.components._name:
+                return self._value
+            else:
+                raise AttributeError('type of ind {} is not equal with the defined type!'.format(ind))
+
+        else:
+            raise AttributeError('only named indices allowed!')
+
+
     def prettyPrint(self, indent=0):
         return '{}{}:\n{}'.format(SPACES*indent,
                                     self.getTreeName(),
