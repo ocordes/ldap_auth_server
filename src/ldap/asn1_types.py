@@ -3,7 +3,7 @@
 ldap/asn1_types.py
 
 writtem by: Oliver Cordes 2019-06-08
-changed by: Oliver Cordes 2019-06-10
+changed by: Oliver Cordes 2020-03-25
 
 """
 
@@ -486,6 +486,9 @@ class SequenceAndSet(asn1base):
         return obj.get_value()
 
 
+    def __len__(self):
+        return len(self._value)
+
     """
     get_value
 
@@ -677,7 +680,14 @@ class Choice(asn1base):
 
 
     def update_payload(self, payload):
-        self._value.update_payload(payload)
+        debug('Choice.update_payload() for value=', type(self._value))
+        if self._value is not None:
+            # in this case the choice was set from a parent object
+            self._value.update_payload(payload)
+        else:
+            debug('Choice.update_payload() analyse the child')
+            obj, paylaod = asn1base.decode(payload, self.components._schema, self.components._name)
+            self._value = obj
 
 
     def prettyPrint(self, indent=0):
@@ -714,11 +724,49 @@ class Choice(asn1base):
         else:
             raise TypeError('type of ind is not supported for choice[]')
 
+
     def __str__(self):
         return 'Choice({})'.format(self._value.getName())
 
 
     def encode(self):
+        return self._value.encode()
+
+
+class Nested(asn1base):
+    tag = None
+
+
+    def set_value(self, val):
+        self._value = val
+
+
+    def get_value(self):
+        #return self._value.get_value()
+        debug('Nested.get_value()')
+        return self._value
+        #return self._value
+
+
+    def update_payload(self, payload):
+        debug('Nested.update_payload() analyse the child')
+        obj, paylaod = asn1base.decode(payload, self.components._schema, self.components._name)
+        self._value = obj
+
+
+    def prettyPrint(self, indent=0):
+        return '{}{}:\n{}'.format(SPACES*indent,
+                                    self.getTreeName(),
+                                    self._value.prettyPrint(indent=indent+1))
+
+
+
+    def __str__(self):
+        return 'Nested({})'.format(self._value.getName())
+
+
+    def encode(self):
+        debug('WARNING not tested!')
         return self._value.encode()
 
 

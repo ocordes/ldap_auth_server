@@ -2,7 +2,7 @@
 ldap/rfc4511.py
 
 written by: Oliver Cordes 2019-06-08
-changed by: Oliver Cordes 2019-06-12
+changed by: Oliver Cordes 2020-03-25
 
 """
 
@@ -481,10 +481,10 @@ class Or(Set):
     components = NamedType('filter', Filter())
 
 
-class Not(Choice):
+class Not(Nested):
     # not             [2] Filter
     tag = Tag(tagClassContext, tagFormatConstructed, 2)  # as per RFC4511 page 23
-    namedValues = NamedValues(NamedType('filter', Filter()))
+    components = NamedType('filter', Filter())
 
 
 class EqualityMatch(AttributeValueAssertion):
