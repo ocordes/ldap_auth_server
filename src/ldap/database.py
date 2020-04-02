@@ -18,25 +18,11 @@ fake_database_entry = {'objectclass': ['posixaccount', 'inetorgperson', 'person'
                         'sn' : '<username>',
                         'uid' : '<username>',
                         'displayname' : '<username>',
-                        'memberof' : 'cn=users,ou=group,dc=UNI-BONN,dc=DE',
-                        'quota' : 'none',
-                        'userpassword' : 'hallo',
-                        'mail' : '<username>@uni-bonn.de' }
-fake_database_1     = {'objectclass': ['posixaccount', 'inetorgperson', 'person'],
-                        'gidnumber': groupid,
-                        'cn' : 'Hugo',
-                        'sn' : 'Hugo',
-                        'uid' : 'Hugo',
-                        'displayname' : 'Hugo von Borst',
-                        'memberof' : 'cn=users,ou=group,dc=uni-bonn,dc=de',
-                        'quota' : 'none',
-                        'userpassword' : 'hallo',
-                        'mail' : 'hugo@mail.mail' }
+                        'memberof' : 'cn=users,ou=group,dc=UNI-BONN,dc=DE' }
 
 fake_database_group = {'objectclass': ['posixgroup'],
                         'description': 'Users',
                         'gidnumber': groupid,
-                        'memberUid' : 'ocordes',
                         'displayname' : 'Users',
                         'cn': 'users' }
 
@@ -55,9 +41,7 @@ class Database(object):
         for username in userlist:
            dbname = 'uid={},{}'.format(username, realm).lower()
            self._db[dbname] = self.create_fake_database_entry(fake_database_entry, username, realm)
-        dbname = 'uid={},{}'.format('hugo', realm).lower()
-        self._db[dbname] = fake_database_1
-
+        
         # add a group
         dbname = 'cn=users,ou=group,{}'.format(realm).lower()
         self._db[dbname] = fake_database_group
