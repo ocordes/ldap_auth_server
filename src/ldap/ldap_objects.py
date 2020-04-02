@@ -269,6 +269,8 @@ class LDAP_Server(object):
             op = op_x.getName()
             if (self._logger is not None) and self._debug:
                 self._logger.write('LDAPMessage ->', op)
+            if (self._logger is not None):
+                self._logger.write('Handle a {} ...'.format(op))
             if op == 'bindRequest':
                 self.BindRequest(op_x[op])
             elif op == 'unbindRequest':
@@ -318,6 +320,7 @@ class LDAP_Server(object):
             data = self._receive_from()
 
             if not data:
+                break
                 time2 = time.time()
                 if (time2-timestamp) > self._timeout:
                     self._logger.write('Timeout reached:', time2)
@@ -328,11 +331,11 @@ class LDAP_Server(object):
                 timestamp = time.time()
                 #self._logger.write(timestamp)
 
+            if len(data) > 0:
 
-            if (self._logger is not None) and self._debug:
-            #    self._logger.write(data)
-            #    self._logger.write('d:', ' '.join([str(i) for i in data]))
-               self._logger.write('<--', data)
-               self._logger.write('<--', octed2string(data))
+               if (self._logger is not None) and self._debug:
+                   self._logger.write('<--', data)
+	      
+                   self._logger.write('<--', octed2string(data))
 
-            self.handle_message(data)
+               self.handle_message(data)
