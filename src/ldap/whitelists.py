@@ -38,7 +38,10 @@ class WhiteLists(object):
 
             nlines = []
             for i in lines:
-              nlines.append(i.strip())
+              line = i.strip()
+              if len(line) > 0:   # check if line if zero
+                if line[0] != '#':
+                   nlines.append(line)
 
             return mtime, nlines
         else:
