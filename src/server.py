@@ -4,9 +4,13 @@
 server.py
 
 written by: Oliver Cordes 2019-06-03
-changed by: Oliver Cordes 2020-03-02
+changed by: Oliver Cordes 2020-03-25
 
 """
+
+
+__version__ = '0.2'
+__author__ = 'Oliver Cordes'
 
 import os, sys
 import socket, time
@@ -17,12 +21,9 @@ from _thread import *
 import threading
 
 
-# Imports from pyasn1
-#from pyasn1.type import tag, namedtype, namedval, univ, constraint
-
+# load all ldap thinggies
 from ldap.rfc4511 import *
 from ldap.ldap_objects import LDAP_Server
-from pyasn1.codec.ber import encoder, decoder
 
 from ldap.auth_provider import htpasswd_auth_provider, \
                                 sasl_auth_provider, \
@@ -48,6 +49,7 @@ print_lock = threading.Lock()
 ini_filename = 'ldap_auth.ini'
 debug = False
 database = None
+timeout = 5
 
 
 def search_ini_file():
@@ -64,7 +66,7 @@ def search_ini_file():
 
 
 def create_auth_provider():
-    global debug, database, logger
+    global debug, database, logger, timeout
 
     fname = search_ini_file()
     if fname is None:
@@ -97,6 +99,11 @@ def create_auth_provider():
 
     # read local htpasswd
     extra_htpasswd = default_config.get('extra_htpasswd', None)
+
+    if 'SERVER' in config:
+        server_config = config['SERVER']
+        timeout = server_config.get('timeout', timeout)
+        logger.write('Set server timeout: {}s'.format(timeout))
 
     if provider == 'PAM':
         logger.write('Using PAM authentication provider...')
@@ -169,10 +176,12 @@ def create_auth_provider():
 
 def threaded(connection, auth_provider):
     ldap_server = LDAP_Server(connection, auth_provider,
-                                database=database, logger=logger, debug=debug)
+                                database=database, logger=logger,
+                                debug=debug,
+                                timeout=float(timeout))
 
     ldap_server.run()
-    print_lock.release()
+
     # connection closed
     logger.writeid(connection.fileno(), 'Closing the connection!')
     connection.close()
@@ -217,8 +226,6 @@ def Main():
             # establish connection with client
             c, addr = s.accept()
 
-            # lock acquired by client
-            print_lock.acquire()
             logger.writeid(c.fileno(), 'Connected to :', addr[0], ':', addr[1])
 
             # Start a new thread and return its identifier

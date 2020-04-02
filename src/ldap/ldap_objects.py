@@ -3,7 +3,7 @@
 ldap/ldap_objects.py
 
 written by: Oliver Cordes 2019-05-28
-changed by: Oliver Cordes 2019-09-10
+changed by: Oliver Cordes 2020-03-24
 
 """
 
@@ -15,11 +15,14 @@ from ldap.asn1_debug import *
 from ldap.auth_provider import htpasswd_auth_provider
 from ldap.database import Database
 
-from pyasn1 import debug
+#from pyasn1 import debug
 
 from ldap.logger import loggerid
 
 import traceback
+import select
+
+import time
 
 
 class LDAP_Object(object):
@@ -131,11 +134,22 @@ class LDAP_SearchResultEntry(LDAP_Object):
 
 
 class LDAP_Server(object):
-    def __init__(self, connection, auth_provider, database=None, logger=None, debug=False):
+    def __init__(self, connection, auth_provider,
+                        database=None,
+                        logger=None,
+                        debug=False,
+                        timeout=5):
         self._logger = loggerid(logger, connection.fileno())
         self._debug = debug
+
+        # authentification provider
+        self._auth_provider = auth_provider
+
+        self._logger.write('database:', database)
         if database is not None:
-            self._database = Database(logger=logger)
+            self._database = Database(self._auth_provider.get_userlist(),
+                                      self._auth_provider.get_realm(),
+                                      logger=self._logger)
         else:
             self._database = None
         self._connection = connection
@@ -149,8 +163,8 @@ class LDAP_Server(object):
         self._auth_type = 0
         self._mechanism = None
 
-        # authentification provider
-        self._auth_provider = auth_provider
+        self._timeout = timeout
+
 
         if self._debug:
             debug_on()
@@ -215,7 +229,7 @@ class LDAP_Server(object):
     def SearchRequest(self, data):
         success = False
         if self._database is not None:
-            results = self._database.search_database(data, self._name, self._auth_provider.get_userlist())
+            results = self._database.search_database(data, self._name)
             for key in results.keys():
                 if self._debug:
                    self._logger.write('search_result:', key)
@@ -261,6 +275,9 @@ class LDAP_Server(object):
                 self.UnbindRequest(op_x[op])
             elif op == 'searchRequest':
                 self.SearchRequest(op_x[op])
+            else:
+                if self._logger is not None:
+                    self._logger.write('not implemented LDAP protocol:', op)
 
 
 
@@ -270,6 +287,7 @@ class LDAP_Server(object):
         # we set a 2 second timeout; depending on your
         # target, this may need to be adjusted
         self._connection.settimeout(0.05)
+        #self._connection.settimeout(0.5)
 
         try:
             # keep reading into the buffer until
@@ -292,12 +310,24 @@ class LDAP_Server(object):
 
     def run(self):
         self._msgid = 1
+
+        # initial time
+        timestamp = time.time()
         while True:
             # data received from client
             data = self._receive_from()
 
             if not data:
-                break
+                time2 = time.time()
+                if (time2-timestamp) > self._timeout:
+                    self._logger.write('Timeout reached:', time2)
+                    self._logger.write('Timeout reached:', timestamp)
+                    self._logger.write('Timeout reached:', (time2-timestamp))
+                    break
+            else:
+                timestamp = time.time()
+                #self._logger.write(timestamp)
+
 
             if (self._logger is not None) and self._debug:
             #    self._logger.write(data)

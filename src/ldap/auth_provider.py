@@ -33,6 +33,8 @@ class auth_provider(object):
                  guest_accounts=None,
                  extra_htpasswd=None,
                  extra_realm=None):
+
+        self._real_realm = None
         self._logger = logger
 
         if self._logger is None:
@@ -65,6 +67,13 @@ class auth_provider(object):
         if self._guest_accounts is not None:
            ulist += self._guest_accounts
         return ulist
+
+
+    def get_realm(self):
+        if self._real_realm is None:
+            return ''
+        else:
+            return self._real_realm
 
 
     def authenticate(self, credentials):
@@ -108,7 +117,7 @@ class realm_auth_provider(auth_provider):
                                extra_htpasswd=extra_htpasswd,
                                extra_realm=extra_realm)
 
-        self._realm = realm
+        self._real_realm = realm
         if realm is None:
             self._realm = None
         else:
