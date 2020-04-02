@@ -31,9 +31,21 @@ class Database(object):
     def __init__(self, userlist, realm, logger=None):
         self._logger = logger
 
+
+        number_users = len(userlist)
+
         if self._logger is not None:
             self._logger.write('Using a fake database...')
-            self._logger.write('Creating entries for {} users...'.format(len(userlist)))
+            self._logger.write('Creating entries for {} users...'.format(number_users)
+
+
+        userlist = list(dict.fromkeys(userlist))
+        number_users2 = len(userlist)
+
+        if self._logger is not None:
+            self._logger.write('Removed duplicated ...')
+            if (number_users - number_users2) > 0:
+                self._logger.write('{} duplicated removed'.format(number_users - number_users2))
 
         # create the complete database
         self._db = {}
@@ -41,7 +53,7 @@ class Database(object):
         for username in userlist:
            dbname = 'uid={},{}'.format(username, realm).lower()
            self._db[dbname] = self.create_fake_database_entry(fake_database_entry, username, realm)
-        
+
         # add a group
         dbname = 'cn=users,ou=group,{}'.format(realm).lower()
         self._db[dbname] = fake_database_group
