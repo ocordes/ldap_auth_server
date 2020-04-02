@@ -36,7 +36,7 @@ class Database(object):
 
         if self._logger is not None:
             self._logger.write('Using a fake database...')
-            self._logger.write('Creating entries for {} users...'.format(number_users)
+            self._logger.write('Creating entries for {} users...'.format(number_users))
 
 
         userlist = list(dict.fromkeys(userlist))
