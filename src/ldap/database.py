@@ -2,7 +2,7 @@
 ldap/database.py
 
 written by: Oliver Cordes 2019-06-12
-changed by: Oliver Cordes 2020-03-26
+changed by: Oliver Cordes 2020-04-16
 
 """
 import re
@@ -58,7 +58,8 @@ class Database(object):
         dbname = 'cn=users,ou=group,{}'.format(realm).lower()
         self._db[dbname] = fake_database_group
 
-        print(self._db)
+        #for i in self._db:
+        #    print(i)
 
 
     def modify_string(self, s, username):

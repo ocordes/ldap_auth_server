@@ -2,7 +2,7 @@
 ldap/auth_provider.py
 
 written by: Oliver Cordes 2019-06-03
-changed by: Oliver Cordes 2020-03-02
+changed by: Oliver Cordes 2020-04-16
 
 """
 
@@ -51,9 +51,11 @@ class auth_provider(object):
         self._extra_htpasswd = None
         if extra_htpasswd is not None:
             if extra_realm is None:
-                self._logger.write('No realm for extra accounts defined!')
+                if self._logger is not None:
+                    self._logger.write('No realm for extra accounts defined!')
             else:
-                self._logger.write('Using extra htpasswd accounts...')
+                if self._logger is not None:
+                    self._logger.write('Using extra htpasswd accounts...')
 
                 self._extra_htpasswd = htpasswd_auth_provider(extra_htpasswd,
                                                               realm=extra_realm,
@@ -63,9 +65,13 @@ class auth_provider(object):
 
 
     def get_userlist(self):
-        ulist = self._whitelist.get_userlist()
+        ulist = []
+        if self._whitelist is not None:
+           ulist += self._whitelist.get_userlist()
         if self._guest_accounts is not None:
            ulist += self._guest_accounts
+        if self._extra_htpasswd is not None:
+           ulist += self._extra_htpasswd.get_userlist()
         return ulist
 
 
@@ -89,9 +95,10 @@ class auth_provider(object):
         handle guest accounts
         """
         if self._guest_accounts is not None:
-           self._logger.write('test guest account: %s' % username)
+            if self._logger is not None:
+                self._logger.write('test guest account: %s' % username)
 
-           return username in self._guest_accounts
+            return username in self._guest_accounts
         else:
           return False
 
@@ -268,6 +275,22 @@ class htpasswd_auth_provider(realm_auth_provider):
                                      guest_accounts=guest_accounts)
 
         self._data = HtpasswdFile(filename)
+        self._filename = filename
+
+
+    def check_password_file(self):
+        res = self._data.load_if_changed()
+        if res:
+            if self._logger is not None:
+                self._logger.write('Reread htpasswd file: {}'.format(self._filename))
+
+
+    def get_userlist(self):
+        ulist = realm_auth_provider.get_userlist(self)
+        self.check_password_file()
+        ulist += self._data.users()
+
+        return ulist
 
 
     def authenticate(self, credentials):
@@ -279,6 +302,7 @@ class htpasswd_auth_provider(realm_auth_provider):
         if self.is_guest(username):
            return True
 
+        self.check_password_file()
         result = self._data.check_password(username, password)
         if result is None:
             # username is not in database
@@ -490,8 +514,10 @@ class krb5_auth_provider(gss_realm_auth_provider):
         try:
             return kerberos.checkPassword(username, password, service, realm)
         except kerberos.BasicAuthError as e:
-            self._logger.write('kerberos.BasicAuthError: {} ({})'.format(*e.args))
+            if self._logger is not None:
+                self._logger.write('kerberos.BasicAuthError: {} ({})'.format(*e.args))
             return False
         except:
-            self._logger.write('kerberos.Error: Unknown Error')
+            if self._logger is not None:
+                self._logger.write('kerberos.Error: Unknown Error')
             return False
