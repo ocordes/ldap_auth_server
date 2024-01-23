@@ -128,7 +128,7 @@ class realm_auth_provider(auth_provider):
         if realm is None:
             self._realm = None
         else:
-            self._realm = re.compile(r'((uid)|(cn))=(?P<word>[a-zA-Z][a-zA-Z0-9]+),'+realm)
+            self._realm = re.compile(r'((uid)|(cn))=(?P<word>[a-zA-Z][a-zA-Z0-9@\.\-]+),'+realm)
 
 
     def get_real_username(self, name):
